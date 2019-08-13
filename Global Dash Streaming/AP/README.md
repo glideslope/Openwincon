@@ -1,4 +1,4 @@
-# OVS bridge ¸¸µé±â
+# OVS bridge ë§Œë“¤ê¸°
 
 ```
 ovs-vsctl add-br br0
@@ -8,15 +8,52 @@ ovs-vsctl set-controller br0 tcp:<IP>:6653
 
 <br>
 
-# wlan Æ÷Æ® Ãß°¡ÇÏ±â
-SDN controller¿¡ ÀÇÇØ °ü¸®µÇ´Â **wlan Æ÷Æ®** Ãß°¡  
-**wlan Æ÷Æ®**ÀÇ IP¸¦ ÃÊ±âÈ­ÇÏ°í **bridge**¿¡ IP ºÎ¿©  
+# wlan í¬íŠ¸ ì¶”ê°€í•˜ê¸°
+SDN controllerì— ì˜í•´ ê´€ë¦¬ë˜ëŠ” **wlan í¬íŠ¸** ì¶”ê°€  
+**wlan í¬íŠ¸**ì˜ IPë¥¼ ì´ˆê¸°í™”í•˜ê³  **bridge**ì— IP ë¶€ì—¬  
 ```
 ovs-vsctl add-port br0 wlan0
 ifconfig br0 up
 ifconfig wlan0 0
-/* device°¡ APÀÏ °æ¿ì */
+/* deviceê°€ APì¼ ê²½ìš° */
 ifconfig br0 <ip>
-/* device°¡ clientÀÏ °æ¿ì */
+/* deviceê°€ clientì¼ ê²½ìš° */
 dhclient br0
+```
+
+<br>
+
+# Proxy í¬íŠ¸ í—ˆìš©  
+Proxy ì„œë²„(ì›¹)ë¥¼ ì‚¬ìš©í•˜ê¸° ìœ„í•´ì„œëŠ” ì™¸ë¶€ì—ì„œ í¬íŠ¸ 80 ì ‘ê·¼ì„ í—ˆìš©í•´ì•¼ í•¨  
+```
+iptables -A INPUT -p tcp --dport <port number> -j ACCEPT
+```
+
+<br>
+
+# /etc/rc.local  
+ì¬ë¶€íŒ…ì‹œ ìë™ ì…‹íŒ… ìŠ¤í¬ë¦½íŠ¸  
+```
+#!/bin/sh
+#
+# rc.local
+#
+# This script is executed at the end of each multiuser runlevel.
+# Make sure that the script will "exit 0" on success or any other
+# value on error.
+#
+# In order to enable or disable this script just change the execution
+# bits.
+#
+# By default this script does nothing.
+
+service ssh restart
+iptables-restore < /etc/iptables.ipv4.nat
+
+su root -c "ifconfig wlan0 0"
+su root -c "ifconfig ap0 192.168.100.1"
+su root -c "service apache2 stop"
+su root -c "iptables -A INPUT -p tcp --dport 80 -j ACCEPT"
+
+exit 0
 ```
