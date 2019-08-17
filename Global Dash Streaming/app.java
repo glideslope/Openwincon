@@ -157,7 +157,8 @@ public class AppComponent {
             int int_ap = hash_est_ap.size();
             int int_ue = hash_est_connect.size();
 
-            int int_balance = int_ue / int_ap + ((int_ue % int_ap == 0)? 0: 1);
+            int int_balance = int_ue / int_ap;
+            int int_remain = int_ue % int_ap;
 
             hash_ctrl_connect.clear();
             hash_ctrl_ap.clear();
@@ -166,6 +167,11 @@ public class AppComponent {
 
                 if(hash_ctrl_ap.containsKey(ap) == false) {
                     hash_ctrl_ap.put(ap, 1);
+                    hash_ctrl_connect.put(ue, ap);
+                }
+                else if(hash_ctrl_ap.get(ap) == int_balance && int_remain > 0) {
+                    int_remain--;
+                    hash_ctrl_ap.put(ap, hash_ctrl_ap.get(ap) + 1);
                     hash_ctrl_connect.put(ue, ap);
                 }
                 else {
@@ -178,18 +184,23 @@ public class AppComponent {
                                 if(hash_ctrl_ap.containsKey(ap) == false) {
                                     hash_ctrl_ap.put(temp_ap, 1);
                                     hash_ctrl_connect.put(ue, temp_ap);
-                                }else {
+                                    break;
+                                }else if(hash_ctrl_ap.get(temp_ap) < int_balance){
                                     hash_ctrl_ap.put(temp_ap, hash_ctrl_ap.get(temp_ap) + 1);
                                     hash_ctrl_connect.put(ue, temp_ap);
+                                    break;
                                 }
-                                break;
+                                else if(hash_ctrl_ap.get(temp_ap) == int_balance && int_remain > 0) {
+                                    int_remain--;
+                                    hash_ctrl_ap.put(temp_ap, hash_ctrl_ap.get(temp_ap) + 1);
+                                    hash_ctrl_connect.put(ue, temp_ap);
+                                    break;
+                                }
                             }
                         }
                     }
                 }
             }
-
-        
         }
     }
 
