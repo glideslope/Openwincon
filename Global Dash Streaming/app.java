@@ -158,7 +158,11 @@ public class AppComponent {
             int int_ue = hash_est_connect.size();
 
             int int_balance = int_ue / int_ap;
-            int int_remain = int_ue % int_ap;
+            int int_remain;
+            if(int_ue > int_ap)
+                int_remain = int_ue % int_ap;
+            else
+                int_remain = 0;
 
             hash_ctrl_connect.clear();
             hash_ctrl_ap.clear();
@@ -169,7 +173,7 @@ public class AppComponent {
                     hash_ctrl_ap.put(ap, 1);
                     hash_ctrl_connect.put(ue, ap);
                 }
-                else if(hash_ctrl_ap.get(ap) == int_balance && int_remain > 0) {
+                else if((hash_ctrl_ap.get(ap) == int_balance) && (int_remain > 0)) {
                     int_remain--;
                     hash_ctrl_ap.put(ap, hash_ctrl_ap.get(ap) + 1);
                     hash_ctrl_connect.put(ue, ap);
@@ -190,7 +194,7 @@ public class AppComponent {
                                     hash_ctrl_connect.put(ue, temp_ap);
                                     break;
                                 }
-                                else if(hash_ctrl_ap.get(temp_ap) == int_balance && int_remain > 0) {
+                                else if((hash_ctrl_ap.get(temp_ap) == int_balance) && (int_remain > 0)) {
                                     int_remain--;
                                     hash_ctrl_ap.put(temp_ap, hash_ctrl_ap.get(temp_ap) + 1);
                                     hash_ctrl_connect.put(ue, temp_ap);
