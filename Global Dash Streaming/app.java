@@ -185,7 +185,7 @@ public class AppComponent {
                     }else {
                         for(String temp_ap: hash_est_ap.keySet()) {
                             if(hash_est_ap.get(temp_ap) < int_balance) {
-                                if(hash_ctrl_ap.containsKey(ap) == false) {
+                                if(hash_ctrl_ap.containsKey(temp_ap) == false) {
                                     hash_ctrl_ap.put(temp_ap, 1);
                                     hash_ctrl_connect.put(ue, temp_ap);
                                     break;
