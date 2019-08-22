@@ -68,7 +68,7 @@ public class AppComponent {
     /* control AP */
     private static HashMap<String, Integer> hash_ctrl_ap;
 
-
+	int array_level[] = new int[] {2000, 1500, 1200, 900};
 
     private static long test_start;
 
@@ -205,9 +205,35 @@ public class AppComponent {
                     }
                 }
             }
+      
+            try {
+                double before, bandwidth;
+                long current;
+                String str_mac;
+                for (PortStatistics statistics : deviceService.getPortDeltaStatistics(device.id())) {
+                    str_mac = device.id().toString();
+
+                    before = hash_est_rate.get(str_mac);
+                    current = statistics.bytesSent();
+                    bandwidth = (current - before) * UNIT_B / (UNIT_T * UNIT_K);
+                    hash_est_rate.put(str_mac, current);
+
+                    if(bandwidth < 0)
+                        continue;
+
+                    for(int i = 0; i < array_level.length; i++) {
+                        if ((hash_ctrl_ap.get(str_mac) > 1) && (hash_ctrl_ap.get(str_mac) * array_level[i] > bandwidth) && (i != array_level.length - 1))
+                            continue;
+                        hash_ctrl_rate.put(str_mac, array_level[i]);
+                        break;
+                    }
+                }
+            }catch(java.lang.ArrayIndexOutOfBoundsException e){
+                // ignore
+            }
         }
     }
-
+    
     static class MSGThread extends Thread {
         private Socket client;
         PrintWriter writer;
