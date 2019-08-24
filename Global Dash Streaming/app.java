@@ -246,6 +246,21 @@ public class AppComponent {
                         continue;
                     try {
                         client = server.accept();
+                        writer = new PrintWriter(client.getOutputStream(), true);
+                        
+			msg = "";
+
+                        /* bitrate selection */
+                        for(String key: hash_ctrl_rate.keySet())
+                            msg += key + "/" + hash_ctrl_rate.get(key) + " ";
+
+                        /* AP selection */
+                        for(String key: hash_ctrl_connect.keySet())
+                            msg += key + "/" + hash_ctrl_connect.get(key) + " ";
+
+                        writer.println(msg + "\r\n");
+
+                        writer.close();
                         client.close();
                     } catch (IOException e) {
                         e.printStackTrace();
