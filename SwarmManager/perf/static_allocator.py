@@ -18,21 +18,22 @@ class StaticServiceAllocator:
         """
         node_dic = {}
         for node in self.nodes:
-            hostname = node.attrs['Description']['Hostname']
-            node_perf = self.node_monitor.read_perf(hostname)
-            node_dic[hostname] = node_perf
+            #hostname = node.attrs['Description']['Hostname']
+            node_id = node.id
+            node_perf = self.node_monitor.read_perf(node_id)
+            node_dic[node_id] = node_perf
 
         task_nodes = []
         while replicas > 0:
             node_scores = []
-            for node_hostname, node_perf in node_dic.items():
+            for node_id, node_perf in node_dic.items():
                 try:
                     cpu_score = service_spec['cpu'] / (node_perf['cpu_total'] - node_perf['cpu_avg'])
                     mem_score = service_spec['mem'] / (node_perf['mem_total'] - node_perf['mem_avg'])
                     disk_score = service_spec['disk'] / (node_perf['disk_total'] - node_perf['disk_avg'])
 
                     node_score = cpu_score + mem_score + disk_score
-                    print(node_hostname, node_score)
+                    print(node_id, node_score)
 
                 except ZeroDivisionError:
                     continue
@@ -49,7 +50,7 @@ class StaticServiceAllocator:
                     elif node_perf['change_dic'][target][1] > 0:
                         node_score *= 1.1
 
-                node_scores.append((node_hostname, node_score))
+                node_scores.append((node_id, node_score))
 
             sorted_node_scores = list(sorted(node_scores, key=lambda x: x[1]))
             target_node = sorted_node_scores[0][0]

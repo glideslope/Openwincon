@@ -18,7 +18,7 @@ import node as node_module
 def handler_factory(node_dic):
     class PerfRequestHandler(http.server.SimpleHTTPRequestHandler):
         def do_GET(self):
-            print(dt.now())
+            # print(dt.now())
             parsed_path = urlparse(self.path)
             data = dict(parse.parse_qsl(parsed_path.query))
             node_id = data.pop('node_id')
@@ -29,6 +29,9 @@ def handler_factory(node_dic):
 
             self.send_response(200)
             self.end_headers()
+
+        def log_message(self, fmt, *args):
+            pass
 
     return PerfRequestHandler 
 
@@ -65,34 +68,13 @@ class NodeMonitor:
         handler = handler_factory(self.node_dic)    
         httpd = http.server.HTTPServer(('0.0.0.0', self.monitor_port), handler)
         httpd.serve_forever()
-        '''
-        while True:
-            self.read_cnt += 1
-            for node in self.swarm_nodes:
-                hostname = node.attrs['Description']['Hostname']
-                
-                with open('perf/csv/perf_%s.csv' % hostname) as fp:
-                    lines = fp.read().splitlines()
-
-                measure_lst = []
-                for line in lines:
-                    info = list(map(float, line.split(',')))
-                    info_dic = {'cpu_total': info[0], 'cpu_cur': info[1],
-                            'mem_total': info[2], 'mem_cur': info[3],
-                            'disk_total': info[4], 'disk_cur': info[5]}
-                    measure_lst.append(info_dic)
-
-                self.node_dic[hostname] = measure_lst
-
-            time.sleep(1)
-        '''
 
     def node_audit(self):
         # TODO: container sholud be relocated upon each case of performance metrics
         audit_dic = {}
         
-        for hostname in self.node_dic.keys():
-            measure_lst = self.node_dic[hostname]
+        for node_id in self.node_dic.keys():
+            measure_lst = self.node_dic[node_id]
 
             cpu_avg = np.average([x['cpu_cur'] for x in measure_lst[-30:]])
             mem_avg = np.average([x['mem_cur'] for x in measure_lst[-30:]])
@@ -102,15 +84,15 @@ class NodeMonitor:
             mem_audit_score = mem_avg / measure_lst[0]['mem_total'] 
             disk_audit_score = disk_avg / measure_lst[0]['disk_total'] 
 
-            #print(hostname, cpu_audit_score, mem_audit_score, disk_audit_score)
+            #print(node_id, cpu_audit_score, mem_audit_score, disk_audit_score)
 
             if cpu_audit_score > .9 or mem_audit_score > .9 or disk_audit_score > .9:
-                audit_dic[hostname] = True
+                audit_dic[node_id] = True
 
         return audit_dic
 
-    def read_perf(self, hostname):
-        measure_lst = self.node_dic[hostname]
+    def read_perf(self, node_id):
+        measure_lst = self.node_dic[node_id]
         total_dic = {'cpu': measure_lst[0]['cpu_total'],
                 'mem': measure_lst[0]['mem_total'],
                 'disk': measure_lst[0]['disk_total']

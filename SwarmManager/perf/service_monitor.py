@@ -41,17 +41,19 @@ class ServiceMonitor:
 
                 for task in tasks:
                     node_id = task['NodeID']
-                    hostname = get_hostname_by_id(node_id)
+                    #hostname = get_hostname_by_id(node_id)
                     container_id = task['Status']['ContainerStatus']['ContainerID']
 
-                    task_lst.append((hostname, service_id, container_id))
+                    task_lst.append((node_id, service_id, container_id))
             
             print(task_lst)
             task_by_node = groupby(sorted(task_lst, key=lambda x: x[0]), key=lambda x: x[0])
             self.task_dic = {} 
             
-            for hostname, tasks in task_by_node:
-                cpu_total = self.node_monitor.read_perf(hostname)['cpu_total']
+            for node_id, tasks in task_by_node:
+                # TODO: Performance monitor가 안 되는 노드 처리
+                cpu_total = self.node_monitor.read_perf(node_id)['cpu_total']
+                hostname = get_hostname_by_id(node_id)
                 #print(hostname, tasks)
 
                 local = False
@@ -105,7 +107,7 @@ class ServiceMonitor:
                         #results = ssh.stdout.readlines()
                         #print(results)
 
-                    self.task_dic[(service_id, hostname, container_id)] = [cpu_usage, mem_usage, disk_usage]
+                    self.task_dic[(service_id, node_id, container_id)] = [cpu_usage, mem_usage, disk_usage]
                     #print(hostname, cpu_usage, mem_usage, disk_usage)
             
             #print(task_dic)
