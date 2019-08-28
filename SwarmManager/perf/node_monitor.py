@@ -1,9 +1,13 @@
 # -*- coding: utf8 -*-
 
-
 import os, sys
+import http.server
 import time
+from datetime import datetime as dt
 import threading
+from collections import defaultdict as dd
+from urllib import parse
+from urllib.parse import urlparse
 sys.path.append(os.path.dirname(os.getcwd()))
 
 import numpy as np
@@ -11,12 +15,33 @@ import numpy as np
 import node as node_module
 
 
+def handler_factory(node_dic):
+    class PerfRequestHandler(http.server.SimpleHTTPRequestHandler):
+        def do_GET(self):
+            print(dt.now())
+            parsed_path = urlparse(self.path)
+            data = dict(parse.parse_qsl(parsed_path.query))
+            node_id = data.pop('node_id')
+            data = {k: float(v) for k, v in data.items()}
+            if len(node_dic[node_id]) > 60:
+                node_dic[node_id].pop(0)
+            node_dic[node_id].append(data)
+
+            self.send_response(200)
+            self.end_headers()
+
+    return PerfRequestHandler 
+
+
+
 class NodeMonitor:
-    def __init__(self):
+    def __init__(self, monitor_port):
         swarm_nodes = node_module.get_nodes()
         self.swarm_nodes = swarm_nodes
-        self.node_dic = {}
+        self.node_dic = dd(lambda: [])
         self.read_cnt = 0
+        self.monitor_port = monitor_port
+        '''
         for node in swarm_nodes:
             hostname = node.attrs['Description']['Hostname']
 
@@ -32,11 +57,15 @@ class NodeMonitor:
                 measure_lst.append(info_dic)
 
             self.node_dic[hostname] = measure_lst
-        
+        '''
         t = threading.Thread(target=self.monitor_thread)
         t.start()
 
     def monitor_thread(self):
+        handler = handler_factory(self.node_dic)    
+        httpd = http.server.HTTPServer(('0.0.0.0', self.monitor_port), handler)
+        httpd.serve_forever()
+        '''
         while True:
             self.read_cnt += 1
             for node in self.swarm_nodes:
@@ -56,7 +85,7 @@ class NodeMonitor:
                 self.node_dic[hostname] = measure_lst
 
             time.sleep(1)
-
+        '''
 
     def node_audit(self):
         # TODO: container sholud be relocated upon each case of performance metrics
@@ -126,10 +155,12 @@ class NodeMonitor:
 
 
 if __name__ == '__main__':
-    node_monitor = NodeMonitor()
+    node_monitor = NodeMonitor(42664)
+    time.sleep(10)
+    print(node_monitor.node_dic)
     #node_monitor.monitor_thread()
-    perf = node_monitor.read_perf('manager2')
-    print(perf)
+    #perf = node_monitor.read_perf('manager2')
+    #print(perf)
     
 
 

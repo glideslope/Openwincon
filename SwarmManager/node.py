@@ -7,7 +7,7 @@ from swarm import is_in_swarm
 
 
 host_client = load_host_client()
-host_swarm = host_client.info()['Swarm']
+#host_swarm = host_client.info()['Swarm']
 
 
 def get_nodes():

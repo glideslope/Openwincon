@@ -72,7 +72,7 @@ def is_machine_registered(name):
 
 
 def _ssh_copy_id(addr, port, user, passwd):
-    cmd = 'ssh-copy-id -p %s %s@%s' % (port, user, addr)
+    cmd = 'ssh-copy-id -p %s %s@%s -o StrictHostKeyChecking=no' % (port, user, addr)
     print(cmd)
 
     child = pexpect.spawn(cmd)

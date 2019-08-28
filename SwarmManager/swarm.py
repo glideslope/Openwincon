@@ -9,6 +9,7 @@ from common import *
 
 host_client = load_host_client()
 
+
 def is_in_swarm(client):
     swarm_dic = client.info()['Swarm']
     active_state = swarm_dic['LocalNodeState']
@@ -89,6 +90,9 @@ def swarm_join_nodes():
     """
     # TODO: Join nodes based on their roles (manager or worker)
 
+    if not is_in_swarm(host_client):
+        swarm_start(host_client, 'enp1s0')
+
     data = open('remote_nodes.json').read()
     json_data = json.loads(data)
     
@@ -125,13 +129,14 @@ def swarm_join_nodes():
                     op.join(DOCKER_MACHINE_CONFIG_DIR, "%s/key.pem" % node_name)),
                 ca_cert=op.join(DOCKER_MACHINE_CONFIG_DIR, "%s/ca.pem" % node_name),
                 verify=True
-                )
+        )
 
         machine_client = docker.DockerClient(base_url=machine_url, tls=tls_config)
 
         machine_client.swarm.join(
                 remote_addrs=[host_client.info()['Swarm']['RemoteManagers'][0]['Addr']],
                 join_token=join_token_worker
-                )
+        )
 
         print('%s node joined the swarm. (addr: %s)' % (node_name, machine_url))
+

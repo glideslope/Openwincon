@@ -5,6 +5,8 @@
 
 import os.path as op
 from os.path import expanduser
+import json
+import docker
 
 DOCKER_MACHINE_CONFIG_DIR = op.join(expanduser("~"), '.docker', 'machine', 'machines')
 
@@ -34,9 +36,9 @@ def load_host_client_env():
 
 
 def load_host_client():
-    env_data = load_host_client_env()
+    # env_data = load_host_client_env()
     host_client = docker.from_env()
-    host_client.login(username=env_data['username'], password=env_data['password'], registry=env_data['url'])
+    # host_client.login(username=env_data['username'], password=env_data['password'], registry=env_data['url'])
 
     return host_client
 
