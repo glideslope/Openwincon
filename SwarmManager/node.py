@@ -20,10 +20,10 @@ def get_hostname_by_id(node_id):
     return node.attrs['Description']['Hostname']
 
 
-def _node_update_label(hostname, labels, delete=False):
-    node = host_client.nodes.get(hostname)
+def _node_update_label(id_or_name, labels, delete=False):
+    node = host_client.nodes.get(id_or_name)
     node_spec = node.attrs['Spec']
-    node_spec['Name'] = node.attrs['Description']['Hostname']
+    # node_spec['Name'] = node.attrs['Description']['Hostname']
     try:
         if not delete:
             node_spec['Labels'].update({x: '1' for x in labels})

@@ -10,14 +10,28 @@ from perf.service_monitor import ServiceMonitor
 from node import _node_update_label
 
 class ServiceModule:
-    def __init__(self):
+    def __init__(self, registry_addr, manager_addr, node_monitor_port):
         self.host_client = docker.from_env()
-        self.node_monitor = NodeMonitor()
+        self.node_monitor = NodeMonitor(node_monitor_port)
         self.service_monitor = ServiceMonitor(self.node_monitor)
         self.s_alloc = StaticServiceAllocator(self.node_monitor)
                 
         audit_thr = threading.Thread(target=self.audit_thread)
         audit_thr.start()
+        # audit_thr.join()
+    
+        try:
+            perf_monitor = self.list_service({'name': 'perf_monitor'})[0]
+            # perf_monitor.remove()
+
+        except IndexError:
+            service = self.host_client.services.create(
+                        image=registry_addr + '/perf',
+                        name='perf_monitor',
+                        mode='global',
+                        env=['manager_addr=%s' % manager_addr, 'manager_port=%s' % node_monitor_port],
+                        hostname='{{.Node.ID}}'
+            )
 
     def audit_thread(self):
         while True:
@@ -31,12 +45,11 @@ class ServiceModule:
                 print(audit_dic)
                 
             #audit_dic = {'mmlab': True}
-            for hostname, _ in audit_dic.items():
-                self.relocate(hostname)
+            for node_id, _ in audit_dic.items():
+                self.relocate(node_id)
 
             time.sleep(1)
                 
-
     def service_create(self, cmd=None):
         """
         Create service under given conditions.
@@ -134,13 +147,12 @@ class ServiceModule:
 
         return 0 
 
-
     def service_print(self):
         """
         Print currently active services
         """
 
-        service_lst = list_service()
+        service_lst = self.list_service()
 
         print('Current Services')
         print('=======================================')
@@ -159,7 +171,6 @@ class ServiceModule:
             serv_created_at = service.attrs['CreatedAt']
 
             print(serv_name, serv_img_name, serv_mode, serv_replicas, serv_created_at)
-
 
     def service_delete(self):
         """
@@ -227,12 +238,13 @@ class ServiceModule:
 
         #    service.update(docker.types.ServiceMode(service_mode, 1))
 
-    def relocate(self, hostname):
-        perf_dic = self.node_monitor.read_perf(hostname)
+    def relocate(self, node_id):
+        # TODO: Hostname --> node id
+        perf_dic = self.node_monitor.read_perf(node_id)
         task_dic = self.service_monitor.get_task_perf()
 
         total_score_dic = {}
-        for k in filter(lambda x: x[1] == hostname, task_dic):
+        for k in filter(lambda x: x[1] == node_id, task_dic):
             task_perf = task_dic[k]
             cpu_score = task_perf[0] / float(perf_dic['cpu_total'])
             mem_score = task_perf[1] / float(perf_dic['mem_total'])
@@ -249,11 +261,11 @@ class ServiceModule:
                 'mem': float(target_service.attrs['Spec']['Labels']['mem']),
                 'disk': float(target_service.attrs['Spec']['Labels']['disk'])
         }
-        new_hostname = self.s_alloc.allocate(target_service_spec)[0]
+        new_node_id = self.s_alloc.allocate(target_service_spec)[0]
         target_service_name = target_service.attrs['Spec']['Name']
 
-        _node_update_label(hostname, [target_service_name], True)
-        _node_update_label(new_hostname, [target_service_name])
+        _node_update_label(node_id, [target_service_name], True)
+        _node_update_label(new_node_id, [target_service_name])
 
 
     def list_service(self, filters=None):
