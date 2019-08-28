@@ -10,14 +10,12 @@ import utility as Util
 """
 def train_simulation(data):
 	print("Training mode")
-	pass
 
 """
-재생
+재생 모드
 """
-def play_simulation(data):
+def test_simulation(data):
 	print("Test mode")
-	pass
 
 if __name__ == "__main__":
 
@@ -27,9 +25,12 @@ if __name__ == "__main__":
 	else:
 		input = sys.argv[1]
 		if input == "train":
-			pass
+			data = Util.initialize_data()
+			train_simulation(data)
 			
 		elif input == "test":
-			pass
+			data = Util.initialize_data()
+			test_simulation(data)
+			
 		else:
 			print("Check your input")
