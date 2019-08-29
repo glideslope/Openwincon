@@ -2,6 +2,9 @@
 from tkinter import ttk
 from tkinter import messagebox
 
+# 비트레이트
+LIST_RATE = [50, 400, 800, 1200, 2000]
+
 """
 입력 콘솔
 """
@@ -52,5 +55,9 @@ def initialize_data():
 	action = ttk.Button(box, text="Enter", command = parse_data)
 	action.pack()
 	box.mainloop()
+
+	# 전역 변수로 지정한 것들
+	ret['LIST_RATE'] = LIST_RATE
+	ret['NUM_RATE'] = len(LIST_RATE)
 	
 	return ret
