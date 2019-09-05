@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true" name="mcnl.SdnOffloadingAppComponent" activate="activate" deactivate="deactivate">
+    <implementation class="mcnl.SdnOffloadingAppComponent"/>
+    <service servicefactory="false">
+        <provide interface="mcnl.ForwardingMapService"/>
+    </service>
+    <property name="service.pid" value="mcnl.SdnOffloadingAppComponent"/>
+    <reference name="intentService" interface="org.onosproject.net.intent.IntentService" cardinality="1..1" policy="static" bind="bindIntentService" unbind="unbindIntentService"/>
+    <reference name="hostService" interface="org.onosproject.net.host.HostService" cardinality="1..1" policy="static" bind="bindHostService" unbind="unbindHostService"/>
+    <reference name="coreService" interface="org.onosproject.core.CoreService" cardinality="1..1" policy="static" bind="bindCoreService" unbind="unbindCoreService"/>
+</scr:component>

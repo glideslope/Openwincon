@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: org.onosproject:onos-core-dist:1.13.0-b6">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/onosproject/onos-core-dist/1.13.0-b6/onos-core-dist-1.13.0-b6.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/org/onosproject/onos-core-dist/1.13.0-b6/onos-core-dist-1.13.0-b6-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/onosproject/onos-core-dist/1.13.0-b6/onos-core-dist-1.13.0-b6-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
