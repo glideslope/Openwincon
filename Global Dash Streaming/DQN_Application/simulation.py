@@ -3,13 +3,14 @@ import numpy as np
 import random
 
 # UE와 AP 사이 정보
-SIZE_INFO = 3
+SIZE_INFO = 4
 CONST_CONNECTABLE = 0
 CONST_AVAILABLE = 1
 CONST_REQUEST = 2
+CONST_SUPPORT = 3
 
 # Time slot 인덱스
-REMAIN_TIMESLOT = 0
+SUM_TIMESLOT = 0
 
 # Bandwidth 정보
 BW_AVG = 2000
@@ -30,7 +31,7 @@ class Simulation:
 		"""
 		self.list_PSNR = []
 		for rate in self.list_rate:
-			self.list_PSNR.append(_get_PSNR(rate))
+			self.list_PSNR.append(self.get_PSNR(rate))
 
 
 	def reset(self):
@@ -85,6 +86,8 @@ class Simulation:
 			for j in range(self.NUM_AP):
 				if self.info[i][j][CONST_CONNECTABLE] == 1:
 					self.info[i][j][CONST_REQUEST] = request
+					# 처음에는 요구하는 대로 다 받는다고 가정
+					self.info[i][j][CONST_SUPPORT] = request
 
 	def make_state(self):
 		
@@ -102,18 +105,40 @@ class Simulation:
 		if self.info[ue][action][CONST_CONNECTABLE] == 0 or self.info[ue][action][CONST_AVAILABLE] == 0:
 			return 0, True
 
-		self.state[REMAIN_TIMESLOT][action] += self.state[ue + 1][action]
+		self.state[SUM_TIMESLOT][action] += self.state[ue + 1][action]
 		
 		numerator = 0
 		denominator = 0
 		for ap in range(self.NUM_AP):
-			numerator += self.state[REMAIN_TIMESLOT][ap]
-			denominator += self.NUM_AP * (self.state[REMAIN_TIMESLOT][ap] * self.state[REMAIN_TIMESLOT][ap])
+			numerator += self.state[SUM_TIMESLOT][ap]
+			denominator += self.NUM_AP * (self.state[SUM_TIMESLOT][ap] * self.state[SUM_TIMESLOT][ap])
 		numerator = numerator * numerator
 		return numerator / denominator, False
+
+	def adjust_bitrate(self, ap, connection):
+		dic_ue = {}
+		for ue in connection:
+			dic_ue[ue] = self.info[ue][ap][CONST_SUPPORT]
+		while True:
+
+			# 가장 큰 bitrate 재조정		
+			greedy_ue = sorted(dic_ue, key = lambda ue: dic_ue[ue], reverse = True)[0]
+			dic_ue[greedy_ue] -= 1
+			self.info[greedy_ue][ap][CONST_SUPPORT] -= 1
 		
-def _get_PSNR(rate):
-	return 6.4157 * math.log10(rate) + 22.27
+			# Timeslot 재계산
+			self.state[SUM_TIMESLOT][ap] = 0
+			for ue in connection:
+				support_index = int(self.info[ue][ap][CONST_SUPPORT])
+				support_bitrate = self.list_rate[support_index]
+				self.state[SUM_TIMESLOT][ap] += support_bitrate / self.info[ue][ap][CONST_AVAILABLE]
+
+			# 허용된 Timeslot 보다 작으면 루프 종료
+			if self.state[SUM_TIMESLOT][ap] <= self.VAL_TIMESLOT:
+				break
+
+	def get_PSNR(self, rate):
+		return 6.4157 * math.log10(rate) + 22.27
 	
 def _get_random_bandwidth():
 	bandwidth = random.gauss(BW_AVG, BW_STD)
