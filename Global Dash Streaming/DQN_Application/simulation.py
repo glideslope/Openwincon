@@ -96,7 +96,7 @@ class Simulation:
 					request_bitrate = self.list_rate[request_index]
 					self.state[ue + 1][ap] = request_bitrate / self.info[ue][ap][CONST_AVAILABLE]
 
-	def step_train(self, ue, action):
+	def step(self, ue, action):
 
 		# UE와 AP 사이의 연결이 불가능하면
 		if self.info[ue][action][CONST_CONNECTABLE] == 0 or self.info[ue][action][CONST_AVAILABLE] == 0:

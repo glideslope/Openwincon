@@ -24,6 +24,9 @@ THRESH_OBSERVE = 100
 # 랜덤 액션 조정 수치
 DELTA_EPSILON = 1000
 
+# 최대 테스트 횟수
+MAX_TEST = 1
+
 """
 학습 모드
 """
@@ -71,7 +74,7 @@ def train_simulation(data):
 			
 			epsilon -= 1 / DELTA_EPSILON
 
-			fairness, error = simulation.step_train(ue, action)
+			fairness, error = simulation.step(ue, action)
 			reward = fairness - before_reward
 			before_reward = fairness
 
@@ -116,10 +119,55 @@ def test_simulation(data):
 	session = tf.Session()
 
 	simulation = Simulation(data)
+	network = DQN(session, data)
 
 	saver = tf.train.Saver()
 	ckeckpoint = tf.train.get_checkpoint_state('model')
 	saver.restore(session, ckeckpoint.model_checkpoint_path)
+
+	# 테스트 시작
+	for episode in range(MAX_TEST):
+
+		list_connection = [[] for i in range(data['NUM_AP'])]
+
+		total_reward = 0
+	
+		before_reward = 0
+
+		simulation.reset()
+		simulation.make_state()
+
+		network.init_state(simulation.state)
+
+		# UE 차례로 AP에 할당
+		for ue in range(data['NUM_UE']):
+			
+			action = network.get_action()
+			list_connection[action].append(ue)			
+
+			fairness, error = simulation.step(ue, action)
+			reward = fairness - before_reward
+			before_reward = fairness
+
+			total_reward += reward
+
+			if error:
+				network.remember(simulation.state, action, reward, True)
+			else:
+				network.remember(simulation.state, action, reward, (ue == (data['NUM_UE'] - 1)))
+
+			if error:
+				break
+	
+		print("Fairness:", total_reward)
+		print()
+		for j in range(data['NUM_AP']):
+			print("AP %d Timeslot: %.2f" % (j, simulation.state[0][j]))
+			print("Connection:", end = " ")
+			print(list_connection[j])
+
+	# 테스트 종료
+
 
 if __name__ == "__main__":
 
