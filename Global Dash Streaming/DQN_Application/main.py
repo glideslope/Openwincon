@@ -2,6 +2,7 @@
 Reference: https://github.com/golbin/TensorFlow-Tutorials
 """
 import tensorflow as tf
+import numpy as np
 import sys
 
 import utility as Util
@@ -11,8 +12,14 @@ from model import DQN
 # 최대 에피소드 갯수
 MAX_EPISODE = 10000
 
+# 트레이닝 주기
+INTERVAL_TRAINING = 4
+
 # 네트워크 업데이트 주기
 INTERVAL_UPDATE = 1000
+
+# 데이터 어느정도 쌓이면 학습 시작
+THRESH_OBSERVE = 100
 
 # 랜덤 액션 조정 수치
 DELTA_EPSILON = 1000
@@ -44,8 +51,60 @@ def train_simulation(data):
 	
 	# 학습 시작
 	for episode in range(MAX_EPISODE):
+		total_reward = 0
+		list_reward = []
+
+		before_reward = 0
+
 		simulation.reset()
 		simulation.make_state()
+
+		network.init_state(simulation.state)
+
+		# UE 차례로 AP에 할당
+		for ue in range(data['NUM_UE']):
+			
+			if np.random.rand() < epsilon:
+				action = np.random.randint(data['NUM_AP'])
+			else:
+				action = network.get_action()
+			
+			epsilon -= 1 / DELTA_EPSILON
+
+			fairness, error = simulation.step_train(ue, action)
+			reward = fairness - before_reward
+			before_reward = fairness
+
+			total_reward += reward
+
+			if error:
+				network.remember(simulation.state, action, reward, True)
+			else:
+				network.remember(simulation.state, action, reward, (ue == (data['NUM_UE'] - 1)))
+
+			if time > THRESH_OBSERVE and (time % INTERVAL_TRAINING == 0):
+				network.train()
+
+			if time % INTERVAL_UPDATE == 0:
+				network.update_target_network()
+	
+			time += 1
+
+			if error:
+				break	
+
+		list_reward.append(total_reward)
+		print(episode, total_reward)
+
+		if episode % 10 == 0:
+			result = session.run(summary, feed_dict={rewards: list_reward})
+			writer.add_summary(result, time)
+			list_reward = []
+
+		if episode % 100 == 0:
+			saver.save(session, 'model/dqn.ckpt', global_step = time)
+			
+			
 	# 학습 종료
 	
 	
