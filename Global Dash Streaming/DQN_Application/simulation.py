@@ -8,6 +8,9 @@ CONST_CONNECTABLE = 0
 CONST_AVAILABLE = 1
 CONST_REQUEST = 2
 
+# Time slot 인덱스
+REMAIN_TIMESLOT = 0
+
 # Bandwidth 정보
 BW_AVG = 2000
 BW_STD = 500
@@ -83,9 +86,20 @@ class Simulation:
 				if self.info[i][j][CONST_CONNECTABLE] == 1:
 					self.info[i][j][CONST_REQUEST] = request
 
+	def make_state(self):
+		for ap in range(self.NUM_AP):
+			self.state[REMAIN_TIMESLOT][ap] = self.VAL_TIMESLOT
+		
+		# 요구하는 bitrate를 다 받는다고 가정하고 state에 timeslot 값 삽입
+		for ue in range(self.NUM_UE):
+			for ap in range(self.NUM_AP):
+				if self.info[ue][ap][CONST_CONNECTABLE]:
+					request_index = int(self.info[ue][ap][CONST_REQUEST])
+					request_bitrate = self.list_rate[request_index]
+					self.state[ue + 1][ap] = request_bitrate / self.info[ue][ap][CONST_AVAILABLE]
 
 		
-
+		
 def _get_PSNR(rate):
 	return 6.4157 * math.log10(rate) + 22.27
 	
