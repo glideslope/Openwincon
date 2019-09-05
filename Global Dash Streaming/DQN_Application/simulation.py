@@ -87,8 +87,6 @@ class Simulation:
 					self.info[i][j][CONST_REQUEST] = request
 
 	def make_state(self):
-		for ap in range(self.NUM_AP):
-			self.state[REMAIN_TIMESLOT][ap] = self.VAL_TIMESLOT
 		
 		# 요구하는 bitrate를 다 받는다고 가정하고 state에 timeslot 값 삽입
 		for ue in range(self.NUM_UE):
@@ -98,7 +96,21 @@ class Simulation:
 					request_bitrate = self.list_rate[request_index]
 					self.state[ue + 1][ap] = request_bitrate / self.info[ue][ap][CONST_AVAILABLE]
 
+	def step_train(self, ue, action):
+
+		# UE와 AP 사이의 연결이 불가능하면
+		if self.info[ue][action][CONST_CONNECTABLE] == 0 or self.info[ue][action][CONST_AVAILABLE] == 0:
+			return 0, True
+
+		self.state[REMAIN_TIMESLOT][action] += self.state[ue + 1][action]
 		
+		numerator = 0
+		denominator = 0
+		for ap in range(self.NUM_AP):
+			numerator += self.state[REMAIN_TIMESLOT][ap]
+			denominator += self.NUM_AP * (self.state[REMAIN_TIMESLOT][ap] * self.state[REMAIN_TIMESLOT][ap])
+		numerator = numerator * numerator
+		return numerator / denominator, False
 		
 def _get_PSNR(rate):
 	return 6.4157 * math.log10(rate) + 22.27
