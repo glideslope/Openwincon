@@ -17,7 +17,6 @@ class PerformanceTracker:
         self.disk_total = psutil.disk_usage('/').total
         #self.fp = open('result/perf.csv', 'a')
         self.manager_url = 'http://' + os.environ['manager_addr'] + ':' + os.environ['manager_port']
-        #self.manager_url = 'http://147.46.215.184:42664'
         self.node_id = socket.gethostname()
 
     def writer_func(self):
