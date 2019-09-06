@@ -33,6 +33,17 @@ def swarm_start(client, advertise_addr='eth0'):
     client.swarm.init(advertise_addr=advertise_addr)
     print('Swarm initiated as %s' % advertise_addr)
 
+    #TODO: Manager address 처리
+    manager_addr = registry_addr = LOCAL_ADDR
+    node_monitor_port = 42664
+    service = host_client.services.create(
+            image=registry_addr + '/perf',
+            name='perf_monitor',
+            mode='global',
+            env=['manager_addr=%s' % manager_addr, 'manager_port=%s' % node_monitor_port],
+            hostname='{{ .Node.ID }}'
+    )
+
     return 0 
 
 
@@ -63,15 +74,14 @@ def swarm_destroy():
         if machine_url == -1:
             print('There is no matching machine with node (%s, %s)' % (node_name, node_addr))
 
-        machine_client = docker.DockerClient(base_url=machine_url, 
-                            tls = docker.tls.TLSConfig(
-                            client_cert=(op.join(DOCKER_MACHINE_CONFIG_DIR, "%s/cert.pem" % node_name),
-                                         op.join(DOCKER_MACHINE_CONFIG_DIR, "%s/key.pem" % node_name)),
-                            ca_cert=op.join(DOCKER_MACHINE_CONFIG_DIR, "%s/ca.pem" % node_name),
-                            verify=True
-                            )
-                        )
+        tls_config = docker.tls.TLSConfig(
+                client_cert=(op.join(DOCKER_MACHINE_CONFIG_DIR, "%s/cert.pem" % node_name),
+                    op.join(DOCKER_MACHINE_CONFIG_DIR, "%s/key.pem" % node_name)),
+                ca_cert=op.join(DOCKER_MACHINE_CONFIG_DIR, "%s/ca.pem" % node_name),
+                verify=True
+        )
 
+        machine_client = docker.DockerClient(base_url=machine_url, tls=tls_config)
         machine_client.swarm.leave(force=True)
 
         print('%s node removed. (addr: %s)' % (node_name, machine_url))
@@ -83,7 +93,7 @@ def swarm_destroy():
     return 0
 
 
-def swarm_join_nodes():
+def swarm_join_nodes(filepath=None):
     """
     Join remote nodes based on remote_nodes.json
 
@@ -93,7 +103,10 @@ def swarm_join_nodes():
     if not is_in_swarm(host_client):
         swarm_start(host_client, 'enp1s0')
 
-    data = open('remote_nodes.json').read()
+    if filepath is None:
+        filepath = 'remote_nodes.json'
+
+    data = open(filepath).read()
     json_data = json.loads(data)
     
     remote_nodes = json_data['nodes']
@@ -115,13 +128,17 @@ def swarm_join_nodes():
         if 'engine' not in remote_node:
             remote_node['engine'] = 'aufs'
 
+        if 'role' not in remote_node or remote_node['role'] == 'worker':
+            join_token = join_token_worker            
+        else:
+            join_token = join_token_manager
+
         if not is_machine_registered(node_name):
             if register_machine(remote_node) == -1:
                 print('Machine register failed: ' + str(remote_node))
                 return 
             
-            machine_url_lst = get_machine_urls()
-
+        machine_url_lst = get_machine_urls()
         machine_url = find_matching_machine_url(node_name, machine_url_lst)
 
         tls_config = docker.tls.TLSConfig(
@@ -135,8 +152,13 @@ def swarm_join_nodes():
 
         machine_client.swarm.join(
                 remote_addrs=[host_client.info()['Swarm']['RemoteManagers'][0]['Addr']],
-                join_token=join_token_worker
+                join_token=join_token
         )
 
+        if join_token == join_token_manager:
+            install_docker_machine_remote(node_name)
+            run_service_module(node_name)
+            
         print('%s node joined the swarm. (addr: %s)' % (node_name, machine_url))
+
 

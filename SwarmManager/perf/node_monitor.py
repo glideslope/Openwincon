@@ -72,7 +72,7 @@ class NodeMonitor:
     def node_audit(self):
         # TODO: container sholud be relocated upon each case of performance metrics
         audit_dic = {}
-        
+    
         for node_id in self.node_dic.keys():
             measure_lst = self.node_dic[node_id]
 
@@ -91,8 +91,18 @@ class NodeMonitor:
 
         return audit_dic
 
+    def get_perf_lst(self, node_id):
+        if node_id not in self.node_dic:
+            return None 
+
+        return self.node_dic[node_id]
+
     def read_perf(self, node_id):
+        if node_id not in self.node_dic:
+            return None 
+    
         measure_lst = self.node_dic[node_id]
+
         total_dic = {'cpu': measure_lst[0]['cpu_total'],
                 'mem': measure_lst[0]['mem_total'],
                 'disk': measure_lst[0]['disk_total']

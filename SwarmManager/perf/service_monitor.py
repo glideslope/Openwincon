@@ -6,7 +6,9 @@ import time
 import threading
 import warnings
 import subprocess as sp
+import requests as req
 import json
+from collections import defaultdict as dd
 warnings.filterwarnings('ignore')
 from itertools import groupby
 
@@ -17,8 +19,9 @@ import docker
 from machine_wrapper import get_machine_urls, get_machine_ssh
 from node import get_hostname_by_id
 from perf.node_monitor import NodeMonitor
-import service
 
+
+host_client = docker.from_env()
 
 class ServiceMonitor:
     def __init__(self, node_monitor):
@@ -26,8 +29,10 @@ class ServiceMonitor:
         self.services = client.services.list()
         self.machine_urls = get_machine_urls()
         self.node_monitor = node_monitor
-        self.task_dic = {}
+        self.task_dic = dd(lambda: dd(lambda: [])) 
         self.first_run = False
+
+        time.sleep(10)
 
         t = threading.Thread(target=self.monitoring_thread)
         t.start()
@@ -35,6 +40,7 @@ class ServiceMonitor:
     def monitoring_thread(self):
         while True:
             task_lst = []
+            '''
             for service in self.services:
                 service_id = service.id
                 tasks = service.tasks(filters={'desired-state': 'running'})
@@ -45,14 +51,23 @@ class ServiceMonitor:
                     container_id = task['Status']['ContainerStatus']['ContainerID']
 
                     task_lst.append((node_id, service_id, container_id))
+            '''
+
+            # print(task_lst)
+            # task_by_node = groupby(sorted(task_lst, key=lambda x: x[0]), key=lambda x: x[0])
+            # self.task_dic = {} 
             
-            print(task_lst)
-            task_by_node = groupby(sorted(task_lst, key=lambda x: x[0]), key=lambda x: x[0])
-            self.task_dic = {} 
-            
-            for node_id, tasks in task_by_node:
+            for node in host_client.nodes.list():
+                node_id = node.attrs['ID']
                 # TODO: Performance monitor가 안 되는 노드 처리
-                cpu_total = self.node_monitor.read_perf(node_id)['cpu_total']
+                # cpu_total = self.node_monitor.read_perf(node_id)['cpu_total']
+                resp = req.get('http://127.0.0.1:42665/read_perf/%s' % node_id) 
+                if resp.status_code != 200:
+                    continue
+
+                perf_dic = json.loads(resp.text)
+                cpu_total = perf_dic['cpu_total']
+
                 hostname = get_hostname_by_id(node_id)
                 #print(hostname, tasks)
 
@@ -87,11 +102,13 @@ class ServiceMonitor:
                     else:
                         sizes[raw_container['Id']] = 0
                 
-                for task in tasks:
-                    service_id = task[1]
-                    container_id = task[2]
+                # for task in tasks:
+                for con in node_client.containers.list():
+                    # service_id = task[1]
+                    # container_id = task[2]
                     #print(hostname, container_id)
-                    con = node_client.containers.get(container_id)
+                    # con = node_client.containers.get(container_id)
+                    container_id = con.attrs['Id']
                     stat = con.stats(stream=False)
                     pre_cpu = stat['precpu_stats']
                     cur_cpu = stat['cpu_stats']
@@ -107,18 +124,32 @@ class ServiceMonitor:
                         #results = ssh.stdout.readlines()
                         #print(results)
 
-                    self.task_dic[(service_id, node_id, container_id)] = [cpu_usage, mem_usage, disk_usage]
+                    # lst = self.task_dic[(service_id, node_id, container_id)]
+                    lst = self.task_dic[node_id][container_id]
+                    if len(lst) > 60:
+                        lst.pop(0)
+                    
+                    lst.append([cpu_usage, mem_usage, disk_usage])
                     #print(hostname, cpu_usage, mem_usage, disk_usage)
             
             #print(task_dic)
             self.first_run = True
+            print('Run complete', self.task_dic)
 
-            time.sleep(30)
+            time.sleep(5)
 
-    def get_task_perf(self):
+    def get_task_perf(self, node_id=None, container_id=None):
         while not self.first_run:
             time.sleep(1)
-        return self.task_dic
+
+        if node_id is None and container_id is None:
+            return self.task_dic
+
+        elif container_id is None:
+            return self.task_dic[node_id]
+
+        else:
+            return self.task_dic[node_id][container_id]
 
 
 if __name__ == '__main__':
