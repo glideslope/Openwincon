@@ -14,15 +14,16 @@ from swarm import *
 from image import *
 from node import *
 from common import *
-from service import ServiceModule
+from service import ServiceHelper
 
 
 host_client = load_host_client()
 host_swarm = host_client.info()['Swarm']
 
-#service_mod = ServiceModule()
+service_helper = None
 
 class CmdShell(Cmd):
+    service_helper = ServiceHelper()
     prompt = 'command> '
     intro = 'Starting docker swarm manager'
 
@@ -89,16 +90,16 @@ class CmdShell(Cmd):
         list: list services
         """
         if inp == 'list':
-            service_mod.service_print()
+            service_helper.service_print()
 
         elif inp == 'create':
-            service_mod.service_create()
+            service_helper.service_create()
 
         elif inp == 'delete':
-            service_mod.service_delete()
+            service_helper.service_delete()
 
         elif inp == 'update':
-            service_mod.service_update()
+            service_helper.service_update()
 
         else:
             print('Wrong command')
@@ -106,9 +107,36 @@ class CmdShell(Cmd):
     do_EOF = do_exit
 
 
+def get_monitor_port():
+    return 42664
+    '''
+    import random, socket
+    retry_cnt = 0
+    while True:
+        port_num = random.randint(10000, 50000)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        result = sock.connect_ex(('127.0.0.1', port_num))
+        if result != 98:
+            sock.close()
+            return port_num
+
+        retry_cnt += 1
+        if retry_cnt > 100:
+            raise Exception('Monitoring server port assign failed')
+    '''
+
+
 def main():
+    global service_helper
+
     print('OpenWinCon Docker controller v0.1')
     print('')
+
+    # TODO: Host address, registry address 획득 로직 필요
+    host_addr = LOCAL_ADDR 
+    #if is_in_swarm(host_client):
+    monitor_port = get_monitor_port()
+    service_helper = ServiceHelper()
 
     cshell = CmdShell()
     cshell.cmdloop()
