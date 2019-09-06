@@ -1,0 +1,70 @@
+{% extends 'layout.html' %}
+{% block title %}Docker swarm controller{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="message">{{ message }}</h1>
+
+    <div class="nodes">
+        <h1>Nodes</h1>
+        <table class="table">
+            <thead>
+                <th scope="col">#</th>
+                <th scope="col">ID</th>
+                <th scope="col">Hostname</th>
+                <th scope="col">IP address</th>
+                <th scope="col">Platform</th>
+            </thead>
+            <tbody>
+            {% for node in nodes %}
+                <tr>
+                    <th scope="row">{{ loop.index }}</th>
+                    <th><a href="/node/{{ node.id }}">{{ node.id }}</a></th>
+                    <th>{{ node.attrs.Description.Hostname }}</th>
+                    <th>{{ node.attrs.Status.Addr }}</th>
+                    <th>{{ node.attrs.Description.Platform.OS }}, {{ node.attrs.Description.Platform.Architecture }}</th>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table> 
+    </div>
+
+    <div class="services">
+        <h1>Services</h1>
+        <table class="table">
+            <thead>
+                <th scope="col">#</th>
+                <th scope="col">ID</th>
+                <th scope="col">Service name</th>
+                <th scope="col">Mode</th>
+                <th scope="col">Created at</th>
+                <th scope="col">Updated at</th>
+                <th scope="col">Delete</th>
+            </thead>
+            <tbody>
+                {% for service in services %}
+                <tr>
+                    <th scope="row">{{ loop.index }}</th>
+                    <th>{{ service.id }}</th>
+                    <th>{{ service.attrs.Spec.Name }}</th>
+                    <th>
+                        {% for key in service.attrs.Spec.Mode.keys() %}
+                            {{ key }}
+                        {% endfor %}
+                    </th>
+                    <th>{{ service.attrs.CreatedAt[:-7] }}</th>
+                    <th>{{ service.attrs.UpdatedAt[:-7] }}</th>
+                    <th>
+                        <button onclick="location.href='/service/remove/{{ service.id }}'" type="button" class="btn btn-danger">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </th>
+                </tr>
+                {% endfor %}
+            </tbody>
+    </div>
+
+ 
+</div><!-- /.container -->
+
+{% endblock %}

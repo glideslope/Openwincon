@@ -1,0 +1,15 @@
+{% extends 'layout.html' %}
+{% block title %}Docker swarm controller{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="message">{{ message }}</h1>
+    
+    <div class="graph">
+        {% for perf_dic in perf_lst %}
+            {{ perf_dic.cpu_cur }}
+        {% endfor %}
+    </div>
+</div><!-- /.container -->
+{% endblock %}
+

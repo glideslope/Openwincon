@@ -1,0 +1,33 @@
+{% extends 'layout.html' %}
+{% block title %}Docker swarm controller{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="message">{{ message }}</h1>
+
+    <div class="containers">
+        {% if display_container %}
+        <h1>Containers</h1>
+        <table class="table">
+            <thead>
+                <th scope="col">#</th>
+                <th scope="col">ID</th>
+                <th scope="col">Name</th>
+            </thead>
+            <tbody>
+                {% for container in containers %}
+                <tr>
+                    <th scope="row">{{ loop.index }}</th>
+                    <th><a href="/node/{{ node_id }}/{{ container.id }}">{{ container.id[:10] }}</a></th>
+                    <th>{{ container.attrs.Name[1:20] }}</th>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div><!-- containers table -->
+
+    {% include 'perf_chart.html' %}
+</div>
+{% endblock %}
+

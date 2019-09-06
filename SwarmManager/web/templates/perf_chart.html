@@ -1,0 +1,94 @@
+<div class="container">
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.1.4/Chart.bundle.min.js'></script>
+
+    <!-- <h1 class="message">{{ message }}</h1> -->
+    <h2>Performance Chart</h2>
+
+    <canvas id="cpu_perf" width="600" height="100"></canvas>
+    <canvas id="mem_perf" width="600" height="100"></canvas>
+    <canvas id="disk_perf" width="600" height="100"></canvas>
+
+    <script>
+        var cpu_data = {
+            labels: [
+                {% for label in labels %}
+                    "{{ label }}",
+                {% endfor %}
+            ],
+
+            datasets: [{
+                label: 'CPU Current',
+                fillColor: "rgba(151,187,205,0.2)",
+                strokeColor: "rgba(151,187,205,1)",
+                pointColor: "rgba(151,187,205,1)",
+                data: [
+                    {% for val in cpu_values %}
+                        "{{ val }}",
+                    {% endfor %}
+                ]
+            }]
+        }
+    
+        var cpuChart = document.getElementById('cpu_perf');
+        var drawChart = new Chart(cpuChart, {
+            type: 'line',
+            data: cpu_data
+        });
+
+        var mem_data = {
+            labels: [
+                {% for label in labels %}
+                    "{{ label }}",
+                {% endfor %}
+            ],
+
+            datasets: [{
+                label: 'Memory Current',
+                fillColor: "rgba(151,187,205,0.2)",
+                strokeColor: "rgba(151,187,205,1)",
+                pointColor: "rgba(151,187,205,1)",
+                data: [
+                    {% for val in mem_values %}
+                        "{{ val }}",
+                    {% endfor %}
+                ]
+            }]
+        }
+
+        var memChart = document.getElementById('mem_perf');
+        var drawMemChart = new Chart(memChart, {
+            type: 'line',
+            data: mem_data
+        });
+
+        var disk_data = {
+            labels: [
+                {% for label in labels %}
+                    "{{ label }}",
+                {% endfor %}
+            ],
+
+            datasets: [{
+                label: 'Disk Current',
+                fillColor: "rgba(151,187,205,0.2)",
+                strokeColor: "rgba(151,187,205,1)",
+                pointColor: "rgba(151,187,205,1)",
+                data: [
+                    {% for val in disk_values %}
+                        "{{ val }}",
+                    {% endfor %}
+                ]
+            }]
+        }
+
+        var diskChart = document.getElementById('disk_perf');
+        var drawDiskChart = new Chart(diskChart, {
+            type: 'line',
+            data: disk_data
+        });
+
+    </script>
+  
+</div>
+
+
