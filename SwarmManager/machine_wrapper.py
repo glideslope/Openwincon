@@ -2,7 +2,7 @@
 
 import pexpect
 import subprocess as sp
-import os.path as op
+import os, os.path as op
 from os.path import expanduser
 import json
 
@@ -71,6 +71,26 @@ def is_machine_registered(name):
         return True
 
 
+def is_docker_machine_installed(node_name):
+    remote_cmd = 'docker-machine version'
+
+    cmd = "docker-machine ssh %s" % node_name
+    cmd = cmd.split(' ')
+    cmd = [x for x in cmd if x != '']
+    cmd.append(remote_cmd)
+    #print(cmd)
+    
+    proc = sp.Popen(cmd, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
+    out, err = proc.communicate()
+    
+    err = err.decode('utf8')
+    #print(err)
+
+    if err != '':
+        return -1
+
+    return 0
+
 def _ssh_copy_id(addr, port, user, passwd):
     cmd = 'ssh-copy-id -p %s %s@%s -o StrictHostKeyChecking=no' % (port, user, addr)
     print(cmd)
@@ -111,8 +131,13 @@ def register_machine(remote_node):
     engine_port = remote_node['engine_port']
     ssh_port = remote_node['ssh_port']
 
+    if is_machine_registered(name):
+        return 2
+
     ssh_copy_result = _ssh_copy_id(addr, ssh_port, user, passwd)
     print(ssh_copy_result)
+    
+    # cmd = 'docker-machine ssh sudo usermod -aG docker dockeradmin'
 
     cmd = 'docker-machine create --engine-storage-driver %s \
             --driver generic \
@@ -136,13 +161,80 @@ def register_machine(remote_node):
     #pprint(err.decode('utf-8').split('\n'))
  
     if err == '':
+        if install_docker_machine_remote(node_name) == -1:
+            return -1
         return 0
 
     return -1
 
 
+def install_docker_machine_remote(remote_machine_name):
+    if is_docker_machine_installed(remote_machine_name) != -1:
+        print('Already installed on %s' % remote_machine_name)
+        return 1
+
+    remote_cmd = 'base=https://github.com/docker/machine/releases/download/v0.16.0 && \
+            curl -L $base/docker-machine-$(uname -s)-$(uname -m) >/tmp/docker-machine && \
+            sudo mv /tmp/docker-machine /usr/local/bin/docker-machine && \
+            chmod 764 /usr/local/bin/docker-machine'
+
+    cmd = 'docker-machine ssh %s' % remote_machine_name
+    cmd = cmd.split(' ')
+    cmd = [x for x in cmd if x != '']
+    cmd.append(remote_cmd)
+    # print(cmd)
+
+    proc = sp.Popen(cmd, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
+    out, err = proc.communicate()
+
+    out = out.decode('utf8')
+    err = err.decode('utf8')
+
+    print(out, err)
+
+    if err == '':
+        return 0
+
+    else:
+        return -1
+    
+
+def run_service_module(remote_machine_name):
+    # 웹 서버에서만 호출 되는 것으로 가정
+    cmd = 'docker-machine ssh remote mkdir Openwincon'
+    cmd = cmd.split(' ')
+    cmd = [x for x in cmd if x != '']
+
+    proc = sp.Popen(cmd, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
+    out, err = proc.communicate()
+
+    cmd = 'docker-machine scp -r %s %s:Openwincon/SwarmManager' % (op.join(HOME_DIR, 'Openwincon/SwarmManager'), remote_machine_name)
+    cmd = cmd.split(' ')
+    cmd = [x for x in cmd if x != '']
+
+    proc = sp.Popen(cmd, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
+    out, err = proc.communicate()
+
+    out = out.decode('utf8')
+    err = err.decode('utf8')
+    
+    print(out, err)
+
+    remote_cmd = 'cd Openwincon/SwarmManager; python3 service.py'
+
+    cmd = 'docker-machine ssh %s' % remote_machine_name
+    cmd = cmd.split(' ')
+    cmd = [x for x in cmd if x != '']
+    cmd.append(remote_cmd)
+
+    proc = sp.Popen(cmd, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
+    out, err = proc.communicate()
+
+    out = out.decode('utf8')
+    err = err.decode('utf8')
+
+    return
+
 
 if __name__ == '__main__':
-    import json
-    ret = get_machine_ssh('node2')
-    print(ret)
+    install_docker_machine_remote('node1')
