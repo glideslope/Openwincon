@@ -1,6 +1,7 @@
 ﻿import math
 import numpy as np
 import random
+import copy
 
 # UE와 AP 사이 정보
 SIZE_INFO = 4
@@ -139,7 +140,110 @@ class Simulation:
 
 	def get_PSNR(self, rate):
 		return 6.4157 * math.log10(rate) + 22.27
-	
+
+	def solve_random(self):
+		timeslot = []
+		for j in range(self.NUM_AP):
+			timeslot.append(self.VAL_TIMESLOT)
+
+		info = copy.deepcopy(self.info)
+		self.random_solution = 0
+
+		for i in range(self.NUM_UE):
+			connectable = []
+			for j in range(self.NUM_AP):
+				connectable.append(j)
+			
+			random.shuffle(connectable)
+			ap = connectable[0]
+
+			max_index = 0
+			# 최대 이용가능한 bitrate 찾아보기
+			for k in range(self.NUM_RATE):
+				rate = self.list_rate[k]
+				if timeslot[ap] < rate / info[i][ap][CONST_AVAILABLE]:
+					max_index = k
+					break
+				if k > info[i][j][CONST_REQUEST]:
+					max_index = k
+					break
+
+			if max_index == 0:
+				index = 0
+			else:
+				index = np.random.randint(max_index)
+			rate = self.list_rate[index]
+			timeslot[ap] -= rate / info[i][ap][CONST_AVAILABLE]
+			self.random_solution += self.get_PSNR(rate)
+			
+
+		return self.random_solution
+
+	"""
+	def solve_random(self):
+		timeslot = []
+		for j in range(self.NUM_AP):
+			timeslot.append(self.VAL_TIMESLOT)
+
+		info = copy.deepcopy(self.info)
+		self.random_solution = 0
+
+		for i in range(self.NUM_UE):
+			for j in range(self.NUM_AP):
+				for k in range(self.NUM_RATE):
+					if k > info[i][j][CONST_REQUEST]:
+						break
+
+		return self.random_solution
+	"""
+
+
+	def solve_optimal(self):
+		timeslot = []
+		for j in range(self.NUM_AP):
+			timeslot.append(self.VAL_TIMESLOT)
+		
+		info = copy.deepcopy(self.info)
+		self.optimal_solution = 0
+
+		self._dfs(0, info, timeslot, 0)
+
+		return self.optimal_solution
+		
+	def _dfs(self, ue, info, timeslot, PSNR):
+		if ue == self.NUM_UE:
+			if PSNR > self.optimal_solution:
+				self.optimal_solution = PSNR
+			return
+
+		else:
+			for j in range(self.NUM_AP):
+				# 연결 불가능한 경우는 제외
+				if info[ue][j][CONST_CONNECTABLE] == 0:
+					continue
+				
+				origin_timeslot = timeslot[j]
+				origin_support = info[ue][j][CONST_SUPPORT]
+
+				for k in range(self.NUM_RATE):
+					
+					# 요구하는 비트레이트보다 클때는 건너 뛰기
+					if k > info[ue][j][CONST_REQUEST]:
+						break
+
+					info[ue][j][CONST_SUPPORT] = k
+					support_rate = self.list_rate[k]
+					timeslot[j] -= support_rate / self.info[ue][j][CONST_AVAILABLE]
+					if timeslot[j] < 0:
+						info[ue][j][CONST_SUPPORT] = origin_support
+						timeslot[j] = origin_timeslot
+						break
+					
+					else:
+						self._dfs(ue + 1, info, timeslot, PSNR + self.get_PSNR(support_rate))				
+						info[ue][j][CONST_SUPPORT] = origin_support
+						timeslot[j] = origin_timeslot
+
 def _get_random_bandwidth():
 	bandwidth = random.gauss(BW_AVG, BW_STD)
 	if bandwidth < 0:

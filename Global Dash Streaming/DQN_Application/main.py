@@ -186,7 +186,8 @@ def test_simulation(data):
 		
 		print()
 
-		total_psnr = 0
+		total_dqn_psnr = 0
+		total_ideal_psnr = 0
 		print("== After adjustment ==")
 		for ap in range(data['NUM_AP']):
 			print("AP %d Timeslot: %.2f" % (ap, simulation.state[SUM_TIMESLOT][ap]))
@@ -194,11 +195,21 @@ def test_simulation(data):
 			for ue in list_connection[ap]:
 				support_index = int(simulation.info[ue][ap][CONST_SUPPORT])
 				support_rate = data['LIST_RATE'][support_index]
-				total_psnr += simulation.get_PSNR(support_rate)
+				total_dqn_psnr += simulation.get_PSNR(support_rate)
+
+				request_index = int(simulation.info[ue][ap][CONST_REQUEST])
+				request_rate = data['LIST_RATE'][request_index]
+				total_ideal_psnr += simulation.get_PSNR(request_rate)
+				
 				print("UE %d(%dkbps)" % (ue, support_rate), end = " ")
 			print()
 		print()
-		print("average PSNR: %.2f" % (total_psnr / data['NUM_UE']))
+		print("Random\tPSNR: %.2f" % (simulation.solve_random() / data['NUM_UE']))
+#		print("Greedy\tPSNR: %.2f" % (simulation.solve_random() / data['NUM_UE']))
+#		print("Fast ???\tPSNR: %.2f" % (simulation.solve_random() / data['NUM_UE']))
+		print("DQN\tPSNR: %.2f" % (total_dqn_psnr / data['NUM_UE']))
+		print("Optimal\tPSNR: %.2f" % (simulation.solve_optimal() / data['NUM_UE']))
+		print("Ideal\tPSNR: %.2f" % (total_ideal_psnr / data['NUM_UE']))
 
 	# 테스트 종료
 
