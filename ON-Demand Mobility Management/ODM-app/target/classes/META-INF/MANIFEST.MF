@@ -1,0 +1,30 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1540294347552
+Build-Jdk: 1.8.0_161
+Built-By: kyoung
+Bundle-Description: ONOS OSGi bundle archetype
+Bundle-ManifestVersion: 2
+Bundle-Name: ODM-app
+Bundle-SymbolicName: org.onosproject.ODM-app
+Bundle-Version: 1.0.0.SNAPSHOT
+Created-By: Apache Maven Bundle Plugin
+Export-Package: org.onosproject.testPrefix;uses:="org.onlab.packet";vers
+ ion="1.0.0",org.onosproject.testBCE;uses:="org.onlab.packet,org.onospro
+ ject.net";version="1.0.0",org.onosproject.testMobility;uses:="org.onlab
+ .packet,org.onosproject.cfg,org.onosproject.core,org.onosproject.net,or
+ g.onosproject.net.flowobjective,org.onosproject.net.host,org.onosprojec
+ t.net.packet,org.onosproject.net.topology,org.osgi.service.component";v
+ ersion="1.0.0"
+Import-Package: com.google.common.base;version="[19.0,20)",org.onlab.pac
+ ket;version="[1.5,2)",org.onlab.packet.ndp;version="[1.5,2)",org.onlab.
+ util;version="[1.5,2)",org.onosproject.cfg;version="[1.5,2)",org.onospr
+ oject.core;version="[1.5,2)",org.onosproject.net;version="[1.5,2)",org.
+ onosproject.net.flow;version="[1.5,2)",org.onosproject.net.flowobjectiv
+ e;version="[1.5,2)",org.onosproject.net.host;version="[1.5,2)",org.onos
+ project.net.packet;version="[1.5,2)",org.onosproject.net.topology;versi
+ on="[1.5,2)",org.onosproject.testBCE,org.onosproject.testPrefix,org.osg
+ i.service.component;version="[1.2,2)",org.slf4j;version="[1.7,2)"
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))"
+Service-Component: OSGI-INF/org.onosproject.testMobility.testMobility.xm
+ l
+Tool: Bnd-3.0.0.201509101326
