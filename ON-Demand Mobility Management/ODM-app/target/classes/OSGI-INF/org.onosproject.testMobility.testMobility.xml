@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true" name="org.onosproject.testMobility.testMobility" activate="activate" deactivate="deactivate" modified="modified">
+    <implementation class="org.onosproject.testMobility.testMobility"/>
+    <property name="packetOutOnly" type="Boolean" value="false"/>
+    <property name="packetOutOfppTable" type="Boolean" value="false"/>
+    <property name="flowTimeout" type="Integer" value="10"/>
+    <property name="flowPriority" type="Integer" value="10"/>
+    <property name="ipv6Forwarding" type="Boolean" value="true"/>
+    <property name="matchDstMacOnly" type="Boolean" value="false"/>
+    <property name="matchVlanId" type="Boolean" value="false"/>
+    <property name="matchIpv4Address" type="Boolean" value="false"/>
+    <property name="matchIpv4Dscp" type="Boolean" value="false"/>
+    <property name="matchIpv6Address" type="Boolean" value="true"/>
+    <property name="matchIpv6FlowLabel" type="Boolean" value="false"/>
+    <property name="matchTcpUdpPorts" type="Boolean" value="false"/>
+    <property name="matchIcmpFields" type="Boolean" value="false"/>
+    <property name="ignoreIPv4Multicast" type="Boolean" value="false"/>
+    <property name="service.pid" value="org.onosproject.testMobility.testMobility"/>
+    <reference name="topologyService" interface="org.onosproject.net.topology.TopologyService" cardinality="1..1" policy="static" bind="bindTopologyService" unbind="unbindTopologyService"/>
+    <reference name="packetService" interface="org.onosproject.net.packet.PacketService" cardinality="1..1" policy="static" bind="bindPacketService" unbind="unbindPacketService"/>
+    <reference name="hostService" interface="org.onosproject.net.host.HostService" cardinality="1..1" policy="static" bind="bindHostService" unbind="unbindHostService"/>
+    <reference name="coreService" interface="org.onosproject.core.CoreService" cardinality="1..1" policy="static" bind="bindCoreService" unbind="unbindCoreService"/>
+    <reference name="cfgService" interface="org.onosproject.cfg.ComponentConfigService" cardinality="1..1" policy="static" bind="bindCfgService" unbind="unbindCfgService"/>
+    <reference name="flowObjectiveService" interface="org.onosproject.net.flowobjective.FlowObjectiveService" cardinality="1..1" policy="static" bind="bindFlowObjectiveService" unbind="unbindFlowObjectiveService"/>
+</scr:component>
