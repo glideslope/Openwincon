@@ -2,6 +2,9 @@
 import numpy as np
 import random
 import copy
+import timeit
+from mkp.algorithms import mtm
+from mthm import *
 
 # UE와 AP 사이 정보
 SIZE_INFO = 4
@@ -83,6 +86,7 @@ class Simulation:
 				self.info[ue][j][CONST_AVILABLE] = _get_random_bandwidth()
 	
 		for i in range(self.NUM_UE):
+			# 요구 bitrate
 			request = np.random.randint(len(self.list_rate))
 			for j in range(self.NUM_AP):
 				if self.info[i][j][CONST_CONNECTABLE] == 1:
@@ -142,6 +146,8 @@ class Simulation:
 		return 6.4157 * math.log10(rate) + 22.27
 
 	def solve_random(self):
+		start = timeit.default_timer()
+
 		timeslot = []
 		for j in range(self.NUM_AP):
 			timeslot.append(self.VAL_TIMESLOT)
@@ -176,29 +182,264 @@ class Simulation:
 			timeslot[ap] -= rate / info[i][ap][CONST_AVAILABLE]
 			self.random_solution += self.get_PSNR(rate)
 			
+		return self.random_solution, (timeit.default_timer() - start)
 
-		return self.random_solution
+	def solve_greedy(self):
+		start = timeit.default_timer()
 
-	"""
-	def solve_random(self):
-		timeslot = []
-		for j in range(self.NUM_AP):
-			timeslot.append(self.VAL_TIMESLOT)
+		list_timeslot = []
+		list_priority = []
+
+		# Timeslot에 따른 우선순위
+		for ap in range(self.NUM_AP):
+			list_timeslot.append([self.VAL_TIMESLOT, ap])
 
 		info = copy.deepcopy(self.info)
-		self.random_solution = 0
 
-		for i in range(self.NUM_UE):
-			for j in range(self.NUM_AP):
-				for k in range(self.NUM_RATE):
-					if k > info[i][j][CONST_REQUEST]:
+		# 비트레이트에 따른 우선 순위
+		for ue in range(self.NUM_UE):
+			list_priority.append([int(info[ue][0][CONST_REQUEST]), ue])
+
+		self.greedy_solution = 0
+		list_priority.sort(reverse = True)
+
+		# 비트레이트 우선순위에 따라 넣음
+		for ue in list_priority:
+			list_timeslot.sort(reverse = True)
+
+			# ap 찾았을 경우
+			find = False
+
+			for ap in list_timeslot:
+				# 연결 불가능한 경우
+				if info[ue[1]][ap[1]][CONST_CONNECTABLE] == 0:
+					continue
+
+				# 최대 이용가능한 bitrate 찾아보기
+				for k in range(ue[0], -1, -1):
+					rate = self.list_rate[k]
+					timeslot = rate / info[ue[1]][ap[1]][CONST_AVAILABLE]
+					if ap[0] - timeslot >= 0:
+						ap[0] -= timeslot
+						self.greedy_solution += self.get_PSNR(rate)
+						find = True
 						break
 
-		return self.random_solution
-	"""
+				#찾은 경우 다음 UE 탐색
+				if find:
+					break	
 
+		return self.greedy_solution, (timeit.default_timer() - start)
+
+	def solve_mtm(self):
+		start = timeit.default_timer()
+
+		info = copy.deepcopy(self.info)
+		for ue in range(self.NUM_UE):
+			for ap in range(self.NUM_AP):
+				info[ue][ap][CONST_SUPPORT] = info[ue][ap][CONST_REQUEST]
+	
+		# AP가 client에게 줄 수 있는 평균 bandwidth를 통해 capacity 구하기
+		list_capacity = []
+		for ap in range(self.NUM_AP):
+			sum = 0
+			for ue in range(self.NUM_UE):
+				sum += info[ue][ap][CONST_AVAILABLE]
+
+			list_capacity.append(int((self.VAL_TIMESLOT * sum) / self.NUM_UE))
+		
+		list_connection = None
+			
+		list_value = []
+		list_weight = []	
+		for ue in range(self.NUM_UE):
+			rate = self.list_rate[int(info[ue][0][CONST_SUPPORT])]
+			list_value.append(self.get_PSNR(rate))
+			list_weight.append(rate)
+
+		# 가방 안에 물건 다 못 넣으면 finish 변수 False 값으로
+		finish = True
+		# 가방 안에 물건 다 못 들어갈 경우 따로 구분
+		list_priority = []
+		# 타임 슬롯 계산 위한 변수
+		list_timeslot = []
+		for ap in range(self.NUM_AP):
+			list_timeslot.append([self.VAL_TIMESLOT, ap])
+		try:
+			sum_psnr, list_connection, back, _ = mtm(list_value, list_weight, list_capacity)
+		except Exception as e:
+			print(e)
+
+		if list_connection == None:
+			list_connection = [-1] * self.NUM_UE
+
+		for ue, ap in enumerate(list_connection):
+			# 가방에 물건 다 못 담는 경우
+			if ap == -1:
+				list_priority.append([int(info[ue][0][CONST_SUPPORT]), ue])
+				finish = False
+			else:
+				rate = self.list_rate[int(info[ue][ap][CONST_SUPPORT])]
+				timeslot = rate / info[ue][ap][CONST_AVAILABLE]
+				list_timeslot[ap][0] -= timeslot 
+
+		# 가방에 안 담긴 물건들 넣기
+		if finish == False:
+				list_priority.sort(reverse = True)
+				list_timeslot.sort(reverse = True)
+				for priority in list_priority:
+					ue = priority[1]
+					ap = list_timeslot[0][1]
+					rate = self.list_rate[int(info[ue][0][CONST_SUPPORT])]
+					timeslot = rate / info[ue][ap][CONST_AVAILABLE]
+					list_timeslot[ap][0] -= timeslot 
+					list_connection[ue] = ap
+					list_timeslot.sort(reverse = True)
+			
+		list_priority = []
+		# 전체 UE 비트레이트 재조정
+		for ue in range(self.NUM_UE):
+			list_priority.append([int(info[ue][0][CONST_SUPPORT]), ue])
+		list_priority.sort(reverse = True)
+	
+		while True:
+
+			# AP에 UE연결 모두 가능한지
+			error = False
+
+			list_timeslot = [self.VAL_TIMESLOT] * self.NUM_AP
+			for ue, ap in enumerate(list_connection):
+				rate = self.list_rate[int(info[ue][ap][CONST_SUPPORT])]
+				timeslot = rate / info[ue][ap][CONST_AVAILABLE]
+				list_timeslot[ap] -= timeslot
+				if list_timeslot[ap] < 0:
+					list_priority.sort(reverse = True)
+					# 비트레이트 한단계 낮춤
+					list_priority[0][0] -= 1
+					ue = list_priority[0][1]
+					for ap in range(self.NUM_AP):
+						info[ue][ap][CONST_SUPPORT] -= 1
+					error = True
+					break
+			if error == False:
+				break
+
+		# PSNR 합 구함
+		self.knapsack_solution = 0		
+		for ue, ap in enumerate(list_connection):
+			rate = self.list_rate[int(info[ue][ap][CONST_SUPPORT])]
+			self.knapsack_solution += self.get_PSNR(rate)
+
+		return self.knapsack_solution, (timeit.default_timer() - start)
+	
+
+	def solve_mthm(self):
+		start = timeit.default_timer()
+
+		info = copy.deepcopy(self.info)
+		for ue in range(self.NUM_UE):
+			for ap in range(self.NUM_AP):
+				info[ue][ap][CONST_SUPPORT] = info[ue][ap][CONST_REQUEST]
+	
+		
+
+		# AP가 client에게 줄 수 있는 평균 bandwidth를 통해 capacity 구하기
+		list_capacity = []
+		for ap in range(self.NUM_AP):
+			sum = 0
+			for ue in range(self.NUM_UE):
+				sum += info[ue][ap][CONST_AVAILABLE]
+
+			list_capacity.append(int((self.VAL_TIMESLOT * sum) / self.NUM_UE))
+		
+		list_connection = None
+			
+		list_value = []
+		list_weight = []	
+		for ue in range(self.NUM_UE):
+			rate = self.list_rate[int(info[ue][0][CONST_SUPPORT])]
+			list_value.append(self.get_PSNR(rate))
+			list_weight.append(rate)
+
+		# 가방 안에 물건 다 못 넣으면 finish 변수 False 값으로
+		finish = True
+		# 가방 안에 물건 다 못 들어갈 경우 따로 구분
+		list_priority = []
+		# 타임 슬롯 계산 위한 변수
+		list_timeslot = []
+		for ap in range(self.NUM_AP):
+			list_timeslot.append([self.VAL_TIMESLOT, ap])
+		try:
+			sum_psnr, list_connection = mthm(self.NUM_UE, self.NUM_AP, list_value, list_weight, list_capacity)
+		except Exception as e:
+			print(e)
+
+		if list_connection == None:
+			list_connection = [-1] * self.NUM_UE
+
+		for ue, ap in enumerate(list_connection):
+			# 가방에 물건 다 못 담는 경우
+			if ap == -1:
+				list_priority.append([int(info[ue][0][CONST_SUPPORT]), ue])
+				finish = False
+			else:
+				rate = self.list_rate[int(info[ue][ap][CONST_SUPPORT])]
+				timeslot = rate / info[ue][ap][CONST_AVAILABLE]
+				list_timeslot[ap][0] -= timeslot 
+
+		# 가방에 안 담긴 물건들 넣기
+		if finish == False:
+				list_priority.sort(reverse = True)
+				list_timeslot.sort(reverse = True)
+				for priority in list_priority:
+					ue = priority[1]
+					ap = list_timeslot[0][1]
+					rate = self.list_rate[int(info[ue][0][CONST_SUPPORT])]
+					timeslot = rate / info[ue][ap][CONST_AVAILABLE]
+					list_timeslot[ap][0] -= timeslot 
+					list_connection[ue] = ap
+					list_timeslot.sort(reverse = True)
+			
+		list_priority = []
+		# 전체 UE 비트레이트 재조정
+		for ue in range(self.NUM_UE):
+			list_priority.append([int(info[ue][0][CONST_SUPPORT]), ue])
+		list_priority.sort(reverse = True)
+	
+		while True:
+
+			# AP에 UE연결 모두 가능한지
+			error = False
+
+			list_timeslot = [self.VAL_TIMESLOT] * self.NUM_AP
+			for ue, ap in enumerate(list_connection):
+				rate = self.list_rate[int(info[ue][ap][CONST_SUPPORT])]
+				timeslot = rate / info[ue][ap][CONST_AVAILABLE]
+				list_timeslot[ap] -= timeslot
+				if list_timeslot[ap] < 0:
+					list_priority.sort(reverse = True)
+					# 비트레이트 한단계 낮춤
+					list_priority[0][0] -= 1
+					ue = list_priority[0][1]
+					for ap in range(self.NUM_AP):
+						info[ue][ap][CONST_SUPPORT] -= 1
+					error = True
+					break
+			if error == False:
+				break
+
+		# PSNR 합 구함
+		self.knapsack_solution = 0		
+		for ue, ap in enumerate(list_connection):
+			rate = self.list_rate[int(info[ue][ap][CONST_SUPPORT])]
+			self.knapsack_solution += self.get_PSNR(rate)
+
+		return self.knapsack_solution, (timeit.default_timer() - start)
+	
 
 	def solve_optimal(self):
+		start = timeit.default_timer()
+
 		timeslot = []
 		for j in range(self.NUM_AP):
 			timeslot.append(self.VAL_TIMESLOT)
@@ -208,7 +449,7 @@ class Simulation:
 
 		self._dfs(0, info, timeslot, 0)
 
-		return self.optimal_solution
+		return self.optimal_solution, (timeit.default_timer() - start)
 		
 	def _dfs(self, ue, info, timeslot, PSNR):
 		if ue == self.NUM_UE:

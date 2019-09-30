@@ -8,9 +8,10 @@ import sys
 import utility as Util
 from simulation import Simulation
 from model import DQN
+import timeit
 
 # 최대 에피소드 갯수
-MAX_EPISODE = 10000
+MAX_EPISODE = 100000
 
 # 트레이닝 주기
 INTERVAL_TRAINING = 4
@@ -22,7 +23,7 @@ INTERVAL_UPDATE = 1000
 THRESH_OBSERVE = 100
 
 # 랜덤 액션 조정 수치
-DELTA_EPSILON = 1000
+DELTA_EPSILON = 10000
 
 # 최대 테스트 횟수
 MAX_TEST = 1
@@ -137,21 +138,23 @@ def test_simulation(data):
 
 	# 테스트 시작
 	for episode in range(MAX_TEST):
-
+		time = 0
+		
 		list_connection = [[] for i in range(data['NUM_AP'])]
 
 		total_reward = 0
 	
 		before_reward = 0
 
-		simulation.reset()
+		simulation.reset()		
 		simulation.make_state()
 
 		network.init_state(simulation.state)
+		start = timeit.default_timer()
 
 		# UE 차례로 AP에 할당
 		for ue in range(data['NUM_UE']):
-			
+
 			action = network.get_action()
 			list_connection[action].append(ue)			
 
@@ -165,10 +168,11 @@ def test_simulation(data):
 				network.remember(simulation.state, action, reward, True)
 			else:
 				network.remember(simulation.state, action, reward, (ue == (data['NUM_UE'] - 1)))
-
+		
 			if error:
 				break
 	
+		time += (timeit.default_timer() - start)
 		print()
 		print("Fairness:", total_reward)
 		print()
@@ -182,7 +186,9 @@ def test_simulation(data):
 		
 			# AP에 할당된 Timeslot이 허용 Timeslot보다 넘치는 경우
 			if simulation.state[SUM_TIMESLOT][ap] > data['VAL_TIMESLOT']:
+				start = timeit.default_timer()
 				simulation.adjust_bitrate(ap, list_connection[ap])
+				time += (timeit.default_timer() - start)
 		
 		print()
 
@@ -204,12 +210,18 @@ def test_simulation(data):
 				print("UE %d(%dkbps)" % (ue, support_rate), end = " ")
 			print()
 		print()
-		print("Random\tPSNR: %.2f" % (simulation.solve_random() / data['NUM_UE']))
-#		print("Greedy\tPSNR: %.2f" % (simulation.solve_random() / data['NUM_UE']))
-#		print("Fast ???\tPSNR: %.2f" % (simulation.solve_random() / data['NUM_UE']))
-		print("DQN\tPSNR: %.2f" % (total_dqn_psnr / data['NUM_UE']))
-		print("Optimal\tPSNR: %.2f" % (simulation.solve_optimal() / data['NUM_UE']))
-		print("Ideal\tPSNR: %.2f" % (total_ideal_psnr / data['NUM_UE']))
+		print("%s\tPSNR: %.2f %.4f" % ("DQN".ljust(15), total_dqn_psnr / data['NUM_UE'], time))
+		performance, time = simulation.solve_random()
+		print("%s\tPSNR: %.2f %.4f" % ("Random".ljust(15), performance / data['NUM_UE'], time))
+		performance, time = simulation.solve_greedy()
+		print("%s\tPSNR: %.2f %.4f" % ("Greedy".ljust(15), performance / data['NUM_UE'], time))
+		performance, time = simulation.solve_mthm()
+		print("%s\tPSNR: %.2f %.4f" % ("Knapsack(MTHM)".ljust(15), performance / data['NUM_UE'], time))
+		performance, time = simulation.solve_mtm()
+		print("%s\tPSNR: %.2f %.4f" % ("Knapsack(MTM)".ljust(15), performance / data['NUM_UE'], time))
+		performance, time = simulation.solve_optimal()
+		print("%s\tPSNR: %.2f %.4f" % ("Optimal".ljust(15), performance / data['NUM_UE'], time))
+		print("%s\tPSNR: %.2f" % ("Ideal".ljust(15), total_ideal_psnr / data['NUM_UE']))
 
 	# 테스트 종료
 
