@@ -11,7 +11,7 @@ from model import DQN
 import timeit
 
 # 최대 에피소드 갯수
-MAX_EPISODE = 100000
+MAX_EPISODE = 10000
 
 # 트레이닝 주기
 INTERVAL_TRAINING = 4
@@ -23,7 +23,7 @@ INTERVAL_UPDATE = 1000
 THRESH_OBSERVE = 100
 
 # 랜덤 액션 조정 수치
-DELTA_EPSILON = 10000
+DELTA_EPSILON = 1000
 
 # 최대 테스트 횟수
 MAX_TEST = 1
