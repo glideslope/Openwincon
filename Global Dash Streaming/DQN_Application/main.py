@@ -219,8 +219,10 @@ def test_simulation(data):
 		print("%s\tPSNR: %.2f %.4f" % ("Knapsack(MTHM)".ljust(15), performance / data['NUM_UE'], time))
 		performance, time = simulation.solve_mtm()
 		print("%s\tPSNR: %.2f %.4f" % ("Knapsack(MTM)".ljust(15), performance / data['NUM_UE'], time))
+		"""
 		performance, time = simulation.solve_optimal()
 		print("%s\tPSNR: %.2f %.4f" % ("Optimal".ljust(15), performance / data['NUM_UE'], time))
+		"""
 		print("%s\tPSNR: %.2f" % ("Ideal".ljust(15), total_ideal_psnr / data['NUM_UE']))
 
 	# 테스트 종료
