@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+    <script src="/static/js/qos.js"></script>
+    <title>QoS Control Web GUI</title>
+  </head>
+  <body ng-app="webApp" ng-controller="qosCtrl">
+
+  {% include 'header.html' %}
+
+  <h3>QoS Control Page</h3>
+  <div class="modal-body row">
+    <div class="col-md-6">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>AP Info.(ssid)</th>
+            <th>AP Info. (ip)</th>
+            <th>Sudoer ID</th>
+            <th>Sudoer Passwd</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr ng-repeat="ap in aps">
+            <td>{[ ap.ssid ]}</td>
+            <td>{[ ap.ap_ip ]}</td>
+            <td>{[ ap.sudoer_id ]}</td>
+            <td>{[ ap.sudoer_passwd]}</td>
+            <td>
+              <button class="btn" ng-click="editRecord(ap)">
+                <span class="glyphicon glyphicon-pencil"></span>  Edit
+              </button>
+
+              <button class="btn btn-danger" ng-click="delRecord(ap)">
+              <span class="glyphicon glyphicon-remove"></span> Delete
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <hr>
+  <button class="btn btn-success" ng-click="editRecord('new')">
+  <span class="glyphicon glyphicon-user"></span>  Register New Target AP
+  </button>
+
+  <hr>
+
+  <form class="form-horizontal" ng-hide="hideform">
+    <h3 ng-show="edit">Create New Target AP:</h3>
+    <h3 ng-hide="edit">Edit Target AP Info.:</h3>
+    <!--hidden value required-->
+    <input type="hidden" name="id" value="">
+    <div class="form-group">
+      <label class="col-sm-2 control-label">AP ssid:</label>
+      <div class="col-sm-10">
+      <input type="text" ng-model="submit_form.ssid" placeholder="djchoi_Pi_AP">
+      </div>
+    </div> 
+    <div class="form-group">
+      <label class="col-sm-2 control-label">AP ip:</label>
+      <div class="col-sm-10">
+      <!-- <input type="text" ng-model="submit_form.ap_ip" placeholder="147.46.121.107"> -->
+      <input type="text" ng-model="submit_form.ap_ip" placeholder="147.47.209.30">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="col-sm-2 control-label">Target Interface Name:</label>
+      <div class="col-sm-10">
+      <input type="text" ng-model="submit_form.target_ifname" placeholder="wlan0">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="col-sm-2 control-label">Sudoer ID:</label>
+      <div class="col-sm-10">
+      <input type="text" ng-model="submit_form.sudoer_id" placeholder="mmlab">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="col-sm-2 control-label">Sudoer Password:</label>
+      <div class="col-sm-10">
+      <input type="text" ng-model="submit_form.sudoer_passwd" placeholder="mmlab">
+      </div>
+    </div>
+
+    <hr>
+    <button class="btn btn-success" ng-disabled="incomplete" ng-click="submit();">
+    <span class="glyphicon glyphicon-save"></span>  Save Changes
+    </button>
+  </form>
+
+  </body>
+</html>
