@@ -23,7 +23,7 @@ def user_list():
 
 @app.route('/ap/')
 def redir():
-  return redirect('http://www.naver.com', code=302)
+  return render_template('ap.html')
   
 @app.route('/qos/')
 def qos():

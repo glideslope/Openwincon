@@ -36,7 +36,7 @@ class SliceAPI(Resource):
   @cors.crossdomain(origin='*')
   def get(self):
     h = QoSHandler(sudoer_id, sudoer_passwd, ap_ip)
-    stdin, stdout, stderr, = h._send_cmd('echo mmlab |sudo -S /home/mmlab/list_slice.sh')
+    stdin, stdout, stderr, = h._send_cmd('echo mmlab |sudo -S /home/mmlab/Openwincon/NetController/apscript/list_slice.sh')
     return stdout.readline()
 
   @cors.crossdomain(origin='*')
@@ -47,7 +47,7 @@ class SliceAPI(Resource):
     password = request.args.get('password')
 
     h = QoSHandler(sudoer_id, sudoer_passwd, ap_ip)
-    stdin, stdout, stderr, = h._send_cmd('echo mmlab |sudo -S /home/mmlab/add_slice.sh %s %s %s'%(name, id, password)  )
+    stdin, stdout, stderr, = h._send_cmd('echo mmlab |sudo -S /home/mmlab/Openwincon/NetController/apscript/add_slice.sh %s %s %s'%(name, id, password)  )
     return stdout.readline()
 
   @cors.crossdomain(origin='*')
@@ -57,7 +57,7 @@ class SliceAPI(Resource):
     id = request.args.get('id')
 
     h = QoSHandler(sudoer_id, sudoer_passwd, ap_ip)
-    stdin, stdout, stderr, = h._send_cmd('echo mmlab |sudo -S /home/mmlab/del_slice.sh %s %s'%(name, id)  )
+    stdin, stdout, stderr, = h._send_cmd('echo mmlab |sudo -S /home/mmlab/Openwincon/NetController/apscript/del_slice.sh %s %s'%(name, id)  )
     return stdout.readline()
 
 
@@ -70,7 +70,7 @@ class SliceQoSAPI(Resource):
   @cors.crossdomain(origin='*')
   def get(self):
     h = QoSHandler(sudoer_id, sudoer_passwd, ap_ip)
-    stdin, stdout, stderr, = h._send_cmd('echo mmlab |sudo -S /home/mmlab/list_qos.sh')
+    stdin, stdout, stderr, = h._send_cmd('echo mmlab |sudo -S /home/mmlab/Openwincon/NetController/apscript/list_qos.sh')
     return stdout.readline()
 
   @cors.crossdomain(origin='*')
@@ -80,7 +80,7 @@ class SliceQoSAPI(Resource):
     rate = request.args.get('rate')
 
     h = QoSHandler(sudoer_id, sudoer_passwd, ap_ip)
-    stdin, stdout, stderr, = h._send_cmd('echo mmlab |sudo -S /home/mmlab/add_qos.sh %s %s'%(name, rate)  )
+    stdin, stdout, stderr, = h._send_cmd('echo mmlab |sudo -S /home/mmlab/Openwincon/NetController/apscript/add_qos.sh %s %s'%(name, rate)  )
     return stdout.readline()
 
   @cors.crossdomain(origin='*')
@@ -90,7 +90,7 @@ class SliceQoSAPI(Resource):
     rate = request.args.get('rate')
 
     h = QoSHandler(sudoer_id, sudoer_passwd, ap_ip)
-    stdin, stdout, stderr, = h._send_cmd('echo mmlab |sudo -S /home/mmlab/ch_qos.sh %s %s'%(name, rate)  )
+    stdin, stdout, stderr, = h._send_cmd('echo mmlab |sudo -S /home/mmlab/Openwincon/NetController/apscript/ch_qos.sh %s %s'%(name, rate)  )
     return stdout.readline()
 
   @cors.crossdomain(origin='*')
@@ -99,7 +99,7 @@ class SliceQoSAPI(Resource):
     name = request.args.get('name')
 
     h = QoSHandler(sudoer_id, sudoer_passwd, ap_ip)
-    stdin, stdout, stderr, = h._send_cmd('echo mmlab |sudo -S /home/mmlab/del_qos.sh %s'%(name)  )
+    stdin, stdout, stderr, = h._send_cmd('echo mmlab |sudo -S /home/mmlab/Openwincon/NetController/apscript/del_qos.sh %s'%(name)  )
     return stdout.readline()
 
 

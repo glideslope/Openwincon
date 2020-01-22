@@ -48,7 +48,7 @@ class QoSHandler():
     return self.client.exec_command(cmd)
 
   def inquiry_slice(self):
-    cmd = 'echo mmlab |sudo -S /home/mmlab/list_slice.sh'
+    cmd = 'echo mmlab |sudo -S /home/mmlab/Openwincon/NetController/apscript/list_slice.sh'
     #cmd='echo \"mmlab\" | sudo -S ls'
     stdout = None; stderr = None;
     outlines = []
