@@ -1,6 +1,6 @@
 #! /bin/bash
 
-. /home/mmlab/func.sh
+. /home/mmlab/Openwincon/NetController/apscript/func.sh
 
 
 rate=$(sudo tc qdisc  |grep "qdisc netem" | grep "$1 " | awk '{print $15}' FS=" ")

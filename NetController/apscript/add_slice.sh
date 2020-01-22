@@ -1,6 +1,6 @@
 #! /bin/bash
 
-. /home/mmlab/func.sh
+. /home/mmlab/Openwincon/NetController/apscript/func.sh
 
 
 dhcp_ap_exist=$(grep -n "^interface $1$" $dhcp_file | awk '{print $1}' FS=":")

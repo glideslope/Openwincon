@@ -1,6 +1,6 @@
 #! /bin/bash
 
-. /home/mmlab/func.sh
+. /home/mmlab/Openwincon/NetController/apscript/func.sh
 
 dev_list=$(iw dev |grep Interface |grep -v "Interface wlan0$" | awk '{print $2}' FS=" ")
 

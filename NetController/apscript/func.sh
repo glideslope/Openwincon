@@ -5,7 +5,7 @@ ip_prefix="192.168."
 
 dhcp_file="/etc/dhcpcd.conf"
 dnsmasq_file="/etc/dnsmasq.conf"
-slice_conf_path="/home/mmlab/slice_conf/"
+slice_conf_path="/home/mmlab/Openwincon/NetController/apscript/slice_conf/"
 
 
 function reload_dhcp_dnsmasq()
