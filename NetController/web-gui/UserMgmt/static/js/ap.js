@@ -1,6 +1,6 @@
 
 var app = angular.module('webApp', []);
-var serverip = '147.47.208.159:8000'
+var serverip = 'http://147.47.208.159:8000'
 
 
 app.config(['$interpolateProvider', '$httpProvider', function($interpolateProvider, $httpProvider) {
@@ -37,7 +37,7 @@ app.controller('apCtrl', ['$rootScope', '$scope', '$http', function($rootScope, 
   $scope.editRecord = function(ap) {
     $scope.hideSliceForm = false;
     if (ap== 'new') {
-      $scope.editSlice = true;
+      $scope.inputSlice = true;
       $scope.incompleteSlice = true;
       $scope.modifiedSlice = false;
 
@@ -47,7 +47,7 @@ app.controller('apCtrl', ['$rootScope', '$scope', '$http', function($rootScope, 
       $scope.submit_form.rate = '';
 
     } else {
-      $scope.editSlice = false;
+      $scope.inputSlice = false;
       $scope.modifiedSlice = true;
 
       $scope.submit_form.id =ap.id;
@@ -62,7 +62,7 @@ app.controller('apCtrl', ['$rootScope', '$scope', '$http', function($rootScope, 
   $scope.editQoS = function(ap) {
     $scope.hideQoSForm = false;
     if (ap== 'new') {
-      $scope.editSlice = true;
+      $scope.inputSlice = true;
       $scope.incompleteSlice = true;
       $scope.modifiedSlice = false;
 
@@ -87,16 +87,16 @@ app.controller('apCtrl', ['$rootScope', '$scope', '$http', function($rootScope, 
   };
 
   $scope.submitSlice = function() {
-    var _url = serverip + "/api/qos/" + $scope.submit_form.d;
+    var _url = serverip + "/api/slice";
     var req = {
       method:'POST',
       url:_url,
       headers:{'Content-Type':undefined},
-      data:$scope.submit_form
+      params:$scope.submit_form
     };
 
-    if ($scope.modifiedSlice) {
-      req.method = 'PUT'; // temporary!
+    if (!$scope.modifiedSlice) {
+      req.method = 'PUT';
       $http(req).success(function(response) {
         $scope.getList();
         $scope.hideSliceForm = true;
@@ -109,6 +109,28 @@ app.controller('apCtrl', ['$rootScope', '$scope', '$http', function($rootScope, 
     }
   };
 
+  $scope.submitQoS = function() {
+    var _url = serverip + "/api/sliceqos" + $scope.submit_form.d;
+    var req = {
+      method:'POST',
+      url:_url,
+      headers:{'Content-Type':undefined},
+      data:$scope.submit_form
+    };
+
+    if (!$scope.modifiedSlice) {
+      req.method = 'PUT'; // temporary!
+      $http(req).success(function(response) {
+        $scope.getList();
+        $scope.hideSliceForm = true;
+      });
+    } else {
+      $http(req).success(function(response) {
+        $scope.getList();
+        $scope.hideSliceForm = true;
+      });
+    }
+  };
 
   $scope.$watch('submit_form.ssid', function() {$scope.test();});
   $scope.$watch('submit_form.id', function() {$scope.test();});

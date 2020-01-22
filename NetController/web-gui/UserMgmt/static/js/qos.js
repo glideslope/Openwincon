@@ -25,7 +25,7 @@ app.controller('qosCtrl', ['$rootScope', '$scope', '$http', function($rootScope,
 
   $scope.getList = function() {
     //$http.get("http://interest.snu.ac.kr:8000/api/qos/all")
-      $http.get("http://147.47.208.190:8000/api/qos/all")
+      $http.get("http://147.47.208.159:8000/api/qos/all")
       .success(function(response) {
         $scope.aps = response;
       });
@@ -67,7 +67,7 @@ app.controller('qosCtrl', ['$rootScope', '$scope', '$http', function($rootScope,
 
   $scope.delRecord = function(ap) {
     //var _url = "http://interest.snu.ac.kr:8000/api/qos/" + ap.id;
-    var _url = "http://147.47.208.190:8000/api/qos/" + ap.id;
+    var _url = "http://147.47.208.159:8000/api/qos/" + ap.ssid;
       $http.delete(_url).success(function(response) {
         $scope.getList();
         $scope.hideform = true;
@@ -76,7 +76,7 @@ app.controller('qosCtrl', ['$rootScope', '$scope', '$http', function($rootScope,
 
   $scope.submit = function() {
     //var _url = "http://interest.snu.ac.kr:8000/api/qos/" + $scope.submit_form.d;
-    var _url = "http://147.47.208.190:8000/api/qos/" + $scope.submit_form.d;
+    var _url = "http://147.47.208.159:8000/api/qos/" + $scope.submit_form.d;
     var req = {
       method:'POST',
       url:_url,
@@ -84,7 +84,7 @@ app.controller('qosCtrl', ['$rootScope', '$scope', '$http', function($rootScope,
       data:$scope.submit_form
     };
 
-    if ($scope.modified) {
+    if (!$scope.modified) {
       req.method = 'PUT'; // temporary!
       $http(req).success(function(response) {
         $scope.getList();

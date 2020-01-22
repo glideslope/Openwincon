@@ -193,8 +193,8 @@ class DBHandler():
     return True
 
 
-  def delete_aps(self, id):
-    if id is None:
+  def delete_aps(self, ssid):
+    if ssid is None:
       return
 
     if not self.connected:
@@ -205,8 +205,8 @@ class DBHandler():
     try:
       sql = """
         DELETE FROM qos_target_aps
-        WHERE id = %s
-        """%(id)
+        WHERE ssid = '%s'
+        """%(ssid)
 
       cursor.execute(sql)
       conn.commit()

@@ -58,7 +58,7 @@
 
   <!--Slice Form--!>
   <form class="form-horizontal" ng-hide="hideSliceForm">
-    <h3 ng-show="editSlice">Create New AP Slice1:</h3>
+    <h3 ng-show="inputSlice">Create New AP Slice:</h3>
     <!--hidden value required-->
     <input type="hidden" name="id" value="">
     <div class="form-group">
@@ -93,10 +93,8 @@
   </form>
 
   <!-- QoS Form --!>
-<!--
   <form class="form-horizontal" ng-hide="hideQoSForm">
-    <h3 ng-show="edit">Edit Slice QoS:</h3>
-    <h3 ng-hide="edit">Edit Target AP Info.:</h3>
+    <h3 ng-show="inputQoS">Edit Slice QoS:</h3>
     <input type="hidden" name="id" value="">
     <div class="form-group">
       <label class="col-sm-2 control-label">AP ssid:</label>
@@ -105,34 +103,17 @@
       </div>
     </div> 
     <div class="form-group">
-      <label class="col-sm-2 control-label">AP ip:</label>
+      <label class="col-sm-2 control-label">rate:</label>
       <div class="col-sm-10">
-      <input type="text" ng-model="submit_form.ap_ip" placeholder="147.47.209.30">
+      <input type="text" ng-model="submit_form.rate" placeholder="2000Kbit">
       </div>
-    </div>
-    <div class="form-group">
-      <label class="col-sm-2 control-label">Target Interface Name:</label>
-      <div class="col-sm-10">
-      <input type="text" ng-model="submit_form.target_ifname" placeholder="wlan0">
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="col-sm-2 control-label">Sudoer ID:</label>
-      <div class="col-sm-10">
-      <input type="text" ng-model="submit_form.sudoer_id" placeholder="mmlab">
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="col-sm-2 control-label">Sudoer Password:</label>
-      <div class="col-sm-10">
-      <input type="text" ng-model="submit_form.sudoer_passwd" placeholder="mmlab">
-      </div>
-    </div>
+    </div> 
     <hr>
-    <button class="btn btn-success" ng-disabled="incomplete" ng-click="submit();">
+    <button class="btn btn-success" ng-disabled="incompleteQoS" ng-click="submitQoS();">
     <span class="glyphicon glyphicon-save"></span>  Save Changes
     </button>
   </form>
---!>
+  
+
   </body>
 </html>
