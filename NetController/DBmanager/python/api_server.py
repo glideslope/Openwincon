@@ -43,12 +43,12 @@ class SliceAPI(Resource):
   def put(self):
 
     ssid = request.args.get('ssid')
-    print 'ssid: %s'%(ssid)
     id = request.args.get('id')
     password = request.args.get('passwd')
 
     h = QoSHandler(sudoer_id, sudoer_passwd, ap_ip)
     stdin, stdout, stderr, = h._send_cmd('echo mmlab |sudo -S /home/mmlab/Openwincon/NetController/apscript/add_slice.sh %s %s %s'%(ssid, id, password)  )
+    print stdout.readline()
     return stdout.readline()
 
   @cors.crossdomain(origin='*')

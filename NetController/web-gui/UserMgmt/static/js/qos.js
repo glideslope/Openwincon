@@ -27,6 +27,7 @@ app.controller('qosCtrl', ['$rootScope', '$scope', '$http', function($rootScope,
     //$http.get("http://interest.snu.ac.kr:8000/api/qos/all")
       $http.get("http://147.47.208.159:8000/api/qos/all")
       .success(function(response) {
+	console.log(response);
         $scope.aps = response;
       });
   };

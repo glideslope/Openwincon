@@ -24,18 +24,25 @@ app.controller('apCtrl', ['$rootScope', '$scope', '$http', function($rootScope, 
     rate:''
   };
 
+  $scope.submit_form2 = {
+    ssid: '',
+    rate: ''
+  };
+
   $scope.getList = function() {
       $http.get(serverip + "/api/slice")
       .success(function(response) {
-        $scope.aps = response;
+	console.log(response.slices);
+        $scope.aps = response.slices;
       });
   };
 
 
-  //$scope.getList();
+  $scope.getList();
 
   $scope.editRecord = function(ap) {
     $scope.hideSliceForm = false;
+    $scope.hideQoSForm = true;
     if (ap== 'new') {
       $scope.inputSlice = true;
       $scope.incompleteSlice = true;
@@ -60,15 +67,23 @@ app.controller('apCtrl', ['$rootScope', '$scope', '$http', function($rootScope, 
   };
 
   $scope.editQoS = function(ap) {
+    $scope.hideSliceForm = true;
     $scope.hideQoSForm = false;
     if (ap== 'new') {
-      $scope.inputSlice = true;
-      $scope.incompleteSlice = true;
-      $scope.modifiedSlice = false;
+      $scope.inputQoS = true;
+      $scope.incompleteQoS = true;
+      $scope.modifiedQoS = false;
 
-      $scope.submit_form.ssid = '';
-      $scope.submit_form.rate = '';
+      $scope.submit_form2.ssid = '';
+      $scope.submit_form2.rate = '';
+    } else {
+      $scope.inputQoS = false;
+      $scope.modifiedQoS = true;
+
+      $scope.submit_form2.ssid = ap.ssid;
+      $scope.submit_form2.rate = ap.rate;
     }
+
   };
 
   $scope.delRecord = function(ap) {
@@ -110,24 +125,24 @@ app.controller('apCtrl', ['$rootScope', '$scope', '$http', function($rootScope, 
   };
 
   $scope.submitQoS = function() {
-    var _url = serverip + "/api/sliceqos" + $scope.submit_form.d;
+    var _url = serverip + "/api/sliceqos";
     var req = {
       method:'POST',
       url:_url,
       headers:{'Content-Type':undefined},
-      data:$scope.submit_form
+      params:$scope.submit_form2
     };
 
     if (!$scope.modifiedSlice) {
-      req.method = 'PUT'; // temporary!
+      req.method = 'PUT';
       $http(req).success(function(response) {
-        $scope.getList();
-        $scope.hideSliceForm = true;
+	$scope.getList();
+	$scope.hideQoSForm = true;
       });
     } else {
       $http(req).success(function(response) {
         $scope.getList();
-        $scope.hideSliceForm = true;
+        $scope.hideQoSForm = true;
       });
     }
   };
@@ -135,20 +150,27 @@ app.controller('apCtrl', ['$rootScope', '$scope', '$http', function($rootScope, 
   $scope.$watch('submit_form.ssid', function() {$scope.test();});
   $scope.$watch('submit_form.id', function() {$scope.test();});
   $scope.$watch('submit_form.passwd', function() {$scope.test();});
-  $scope.$watch('submit_form.rate', function() {$scope.test();});
+  $scope.$watch('submit_form2.ssid', function() {$scope.test2();});
+  $scope.$watch('submit_form2.rate', function() {$scope.test2();});
+
   
 
   $scope.test = function() {
     $scope.incompleteSlice = false;
     if ($scope.submit_form.ssid == "" ||
         $scope.submit_form.id == "" ||
-        $scope.submit_form.passwd == "" ||
-        $scope.submit_form.rate == "") {
+        $scope.submit_form.passwd == "") {
       $scope.incompleteSlice = true;
     }
   };
 
-
+  $scope.test2 = function() {
+    $scope.incompleteQoS = false;
+    if ($scope.submit_form2.ssid == "" ||
+	$scope.submit_form2.rate == "") {
+      $scope.incompleteQoS = true;
+    }
+  };
 
 }]);
 

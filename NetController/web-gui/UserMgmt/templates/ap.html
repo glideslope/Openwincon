@@ -32,9 +32,11 @@
             <td>{[ ap.rate]}</td>
             <td>
               <button class="btn" ng-click="editRecord(ap)">
-                <span class="glyphicon glyphicon-pencil"></span>  Edit
+                <span class="glyphicon glyphicon-pencil"></span>  Edit record
               </button>
-
+              <button class="btn" ng-click="editQoS(ap)">
+                <span class="glyphicon glyphicon-pencil"></span>  Edit rate
+              </button>
               <button class="btn btn-danger" ng-click="delRecord(ap)">
               <span class="glyphicon glyphicon-remove"></span> Delete
               </button>
@@ -51,7 +53,7 @@
   </button>
   
   <button class="btn btn-success" ng-click="editQoS('new')">
-  <span class="glyphicon glyphicon-user"></span>  Edit QoS
+  <span class="glyphicon glyphicon-user"></span>  Create QoS
   </button>
 
   <hr>
@@ -59,6 +61,7 @@
   <!--Slice Form--!>
   <form class="form-horizontal" ng-hide="hideSliceForm">
     <h3 ng-show="inputSlice">Create New AP Slice:</h3>
+    <h3 ng-hide="inputSlice">Edit Target AP Info.:</h3>
     <!--hidden value required-->
     <input type="hidden" name="id" value="">
     <div class="form-group">
@@ -79,12 +82,6 @@
       <input type="text" ng-model="submit_form.passwd" placeholder="12345678">
       </div>
     </div>
-    <div class="form-group">
-      <label class="col-sm-2 control-label">rate:</label>
-      <div class="col-sm-10">
-      <input type="text" ng-model="submit_form.rate" placeholder="2000Kbit">
-      </div>
-    </div> 
 
     <hr>
     <button class="btn btn-success" ng-disabled="incompleteSlice" ng-click="submitSlice();">
@@ -94,18 +91,19 @@
 
   <!-- QoS Form --!>
   <form class="form-horizontal" ng-hide="hideQoSForm">
-    <h3 ng-show="inputQoS">Edit Slice QoS:</h3>
+    <h3 ng-show="inputQoS">Create Slice QoS:</h3>
+    <h3 ng-hide="inputQoS">Edit Target Slice QoS:</h3>
     <input type="hidden" name="id" value="">
     <div class="form-group">
       <label class="col-sm-2 control-label">AP ssid:</label>
       <div class="col-sm-10">
-      <input type="text" ng-model="submit_form.ssid" placeholder="TEST_AP01">
+      <input type="text" ng-model="submit_form2.ssid" placeholder="TEST_AP01">
       </div>
     </div> 
     <div class="form-group">
       <label class="col-sm-2 control-label">rate:</label>
       <div class="col-sm-10">
-      <input type="text" ng-model="submit_form.rate" placeholder="2000Kbit">
+      <input type="text" ng-model="submit_form2.rate" placeholder="2000Kbit">
       </div>
     </div> 
     <hr>
