@@ -27,6 +27,7 @@ app.controller('qosCtrl', ['$rootScope', '$scope', '$http', function($rootScope,
 
   $scope.submit_form2 = {
     ssid: '',
+    ip: '',
     rate: ''
   };
 
@@ -77,12 +78,14 @@ app.controller('qosCtrl', ['$rootScope', '$scope', '$http', function($rootScope,
       $scope.modifiedQoS = false;
 
       $scope.submit_form2.ssid = '';
+      $scope.submit_form2.ip = '';
       $scope.submit_form2.rate = '';
     } else {
       $scope.inputQoS = false;
       $scope.modifiedQoS = true;
 
       $scope.submit_form2.ssid = ap.ssid;
+      $scope.submit_form2.ip = ap.ip;
       $scope.submit_form2.rate = ap.rate;
     }
 
@@ -94,7 +97,7 @@ app.controller('qosCtrl', ['$rootScope', '$scope', '$http', function($rootScope,
       method:'DELETE',
       url:_url,
       headers:{'Content-Type':undefined},
-      params:{'ssid':ap.ssid, 'id':ap.id}
+      params:{'ssid':ap.ssid, 'ip':ap.ip, 'id':ap.id}
     };
 
     $http(req).success(function(response) {
@@ -135,7 +138,7 @@ app.controller('qosCtrl', ['$rootScope', '$scope', '$http', function($rootScope,
       params:$scope.submit_form2
     };
 
-    if (!$scope.modifiedSlice) {
+    if (!$scope.modifiedQoS) {
       req.method = 'PUT';
       $http(req).success(function(response) {
 	$scope.getList();
@@ -154,6 +157,7 @@ app.controller('qosCtrl', ['$rootScope', '$scope', '$http', function($rootScope,
   $scope.$watch('submit_form.ip', function() {$scope.test();});
   $scope.$watch('submit_form.passwd', function() {$scope.test();});
   $scope.$watch('submit_form2.ssid', function() {$scope.test2();});
+  $scope.$watch('submit_form2.ip', function() {$scope.test2();});
   $scope.$watch('submit_form2.rate', function() {$scope.test2();});
 
   
@@ -171,6 +175,7 @@ app.controller('qosCtrl', ['$rootScope', '$scope', '$http', function($rootScope,
   $scope.test2 = function() {
     $scope.incompleteQoS = false;
     if ($scope.submit_form2.ssid == "" ||
+	$scope.submit_form2.ip == "" ||
 	$scope.submit_form2.rate == "") {
       $scope.incompleteQoS = true;
     }

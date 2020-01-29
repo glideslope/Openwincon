@@ -32,33 +32,66 @@ class SliceAPI(Resource):
 
   @cors.crossdomain(origin='*')
   def get(self):
-    ap_ip = request.args.
-    h = QoSHandler(sudoer_id, sudoer_passwd, ap_ip)
-    stdin, stdout, stderr, = h._send_cmd('echo mmlab |sudo -S /home/mmlab/Openwincon/NetController/apscript/list_slice.sh')
-    return stdout.readline()
+    aps = []
+    resultset = db_handler.get_all_aps(aps)
 
+    temp = {}
+    output = {}
+    output['slices'] = []
+    for ap in resultset:
+      try:
+        h = QoSHandler(ap['sudoer_id'], ap['sudoer_passwd'], ap['ap_ip'])
+        stdin, stdout, stderr, = h._send_cmd('echo mmlab |sudo -S /home/' + ap['sudoer_id'] + '/Openwincon/NetController/apscript/list_slice.sh')
+	temp = json.loads(stdout.readline())
+	for slice in temp['slices']:
+	  slice['ip'] = ap['ap_ip']
+	output['slices'] += temp['slices']
+	h.close()
+      except Exception, e:
+        continue
+    
+    return json.dumps(output)
+        
   @cors.crossdomain(origin='*')
   def put(self):
-
+    ip = request.args.get('ip')
     ssid = request.args.get('ssid')
     id = request.args.get('id')
     password = request.args.get('passwd')
 
-    h = QoSHandler(sudoer_id, sudoer_passwd, ap_ip)
-    stdin, stdout, stderr, = h._send_cmd('echo mmlab |sudo -S /home/mmlab/Openwincon/NetController/apscript/add_slice.sh %s %s %s'%(ssid, id, password)  )
-    print stdout.readline()
-    return stdout.readline()
+    resultset = db_handler.get_all_aps([ip])
+
+    output = ''
+    for ap in resultset:
+      try:
+        h = QoSHandler(ap['sudoer_id'], ap['sudoer_passwd'], ap['ap_ip'])
+        stdin, stdout, stderr, = h._send_cmd('echo mmlab |sudo -S /home/mmlab/Openwincon/NetController/apscript/add_slice.sh %s %s %s'%(ssid, id, password)  )
+	output = stdout.readline()
+	h.close()
+      except Exception, e:
+        continue
+
+    return output
 
   @cors.crossdomain(origin='*')
   def delete(self):
-
+    ip = request.args.get('ip')
     ssid = request.args.get('ssid')
     id = request.args.get('id')
+    
+    resultset = db_handler.get_all_aps([ip])
+    
+    output = ''
+    for ap in resultset:
+      try:
+        h = QoSHandler(ap['sudoer_id'], ap['sudoer_passwd'], ap['ap_ip'])
+        stdin, stdout, stderr, = h._send_cmd('echo mmlab |sudo -S /home/mmlab/Openwincon/NetController/apscript/del_slice.sh %s %s'%(ssid, id)  )
+	output = stdout.readline()
+	h.close()
+      except Exception, e:
+        continue
 
-    h = QoSHandler(sudoer_id, sudoer_passwd, ap_ip)
-    stdin, stdout, stderr, = h._send_cmd('echo mmlab |sudo -S /home/mmlab/Openwincon/NetController/apscript/del_slice.sh %s %s'%(ssid, id)  )
-    return stdout.readline()
-
+    return output
 
 class SliceQoSAPI(Resource):
   def __init__(self):
@@ -68,40 +101,78 @@ class SliceQoSAPI(Resource):
 
   @cors.crossdomain(origin='*')
   def get(self):
-    h = QoSHandler(sudoer_id, sudoer_passwd, ap_ip)
-    stdin, stdout, stderr, = h._send_cmd('echo mmlab |sudo -S /home/mmlab/Openwincon/NetController/apscript/list_qos.sh')
-    return stdout.readline()
+    ip = request.args.get('ip')
+
+    resultset = db_handler.get_all_aps([ip])
+
+    output = ''
+    for ap in resultset:
+      try:
+        h = QoSHandler(ap['sudoer_id'], ap['sudoer_passwd'], ap['ap_ip'])
+        stdin, stdout, stderr, = h._send_cmd('echo mmlab |sudo -S /home/mmlab/Openwincon/NetController/apscript/list_qos.sh')
+	output = stdout.readline()
+	h.close()
+      except Exception, e:
+        continue
+
+    return output
 
   @cors.crossdomain(origin='*')
   def put(self):
-
+    ip = request.args.get('ip')
     ssid = request.args.get('ssid')
     rate = request.args.get('rate')
 
-    h = QoSHandler(sudoer_id, sudoer_passwd, ap_ip)
-    stdin, stdout, stderr, = h._send_cmd('echo mmlab |sudo -S /home/mmlab/Openwincon/NetController/apscript/add_qos.sh %s %s'%(ssid, rate)  )
-    return stdout.readline()
+    resultset = db_handler.get_all_aps([ip])
+
+    output = ''
+    for ap in resultset:
+      try:
+        h = QoSHandler(ap['sudoer_id'], ap['sudoer_passwd'], ap['ap_ip'])
+        stdin, stdout, stderr, = h._send_cmd('echo mmlab |sudo -S /home/mmlab/Openwincon/NetController/apscript/add_qos.sh %s %s'%(ssid, rate)  )
+	output = stdout.readline()
+      except Exception, e:
+        continue
+
+    return output
 
   @cors.crossdomain(origin='*')
   def post(self):
-
+    ip = request.args.get('ip')
     ssid = request.args.get('ssid')
     rate = request.args.get('rate')
 
-    h = QoSHandler(sudoer_id, sudoer_passwd, ap_ip)
-    stdin, stdout, stderr, = h._send_cmd('echo mmlab |sudo -S /home/mmlab/Openwincon/NetController/apscript/ch_qos.sh %s %s'%(ssid, rate)  )
-    return stdout.readline()
+    resultset = db_handler.get_all_aps([ip])
+
+    output = ''
+    for ap in resultset:
+      try:
+        h = QoSHandler(ap['sudoer_id'], ap['sudoer_passwd'], ap['ap_ip'])
+        stdin, stdout, stderr, = h._send_cmd('echo mmlab |sudo -S /home/mmlab/Openwincon/NetController/apscript/ch_qos.sh %s %s'%(ssid, rate)  )
+        output = stdout.readline()
+	h.close()
+      except Exception, e:
+        continue
+
+    return output
 
   @cors.crossdomain(origin='*')
   def delete(self):
-
+    ip = request.args.get('ip')
     ssid = request.args.get('ssid')
 
-    h = QoSHandler(sudoer_id, sudoer_passwd, ap_ip)
-    stdin, stdout, stderr, = h._send_cmd('echo mmlab |sudo -S /home/mmlab/Openwincon/NetController/apscript/del_qos.sh %s'%(ssid)  )
-    return stdout.readline()
+    resultset = db_handler.get_all_aps([ip])
+    output = ''
+    for ap in resultset:
+      try:
+        h = QoSHandler(ap['sudoer_id'], ap['sudoer_passwd'], ap['ap_ip'])
+	stdin, stdout, stderr, = h._send_cmd('echo mmlab |sudo -S /home/mmlab/Openwincon/NetController/apscript/del_qos.sh %s'%(ssid)  )
+	output = stdout.readline()
+	h.close()
+      except Exception, e:
+        continue
 
-
+    return output
 
 class UserAPI(Resource):
   def __init__(self):
