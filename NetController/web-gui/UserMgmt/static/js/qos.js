@@ -1,5 +1,6 @@
 
 var app = angular.module('webApp', []);
+var serverip = 'http://147.47.208.159:8000'
 
 
 app.config(['$interpolateProvider', '$httpProvider', function($interpolateProvider, $httpProvider) {
@@ -10,25 +11,30 @@ app.config(['$interpolateProvider', '$httpProvider', function($interpolateProvid
 
 
 app.controller('qosCtrl', ['$rootScope', '$scope', '$http', function($rootScope, $scope, $http) {
-  $scope.hideform = true;
+  $scope.hideSliceForm = true;
+  $scope.hideQoSForm = true;
   $scope.options = {
     devices:['wired', 'wireless']
   };
 
   $scope.submit_form = {
     ssid: '',
-    ap_ip: '',
-    target_ifname: '',
-    sudoer_id: '',
-    sudoer_passwd:''
+    ip: '',
+    id: '',
+    passwd: '',
+    rate:''
+  };
+
+  $scope.submit_form2 = {
+    ssid: '',
+    rate: ''
   };
 
   $scope.getList = function() {
-    //$http.get("http://interest.snu.ac.kr:8000/api/qos/all")
-      $http.get("http://147.47.208.159:8000/api/qos/all")
+      $http.get(serverip + "/api/slice")
       .success(function(response) {
-	console.log(response);
-        $scope.aps = response;
+	console.log(response.slices);
+        $scope.aps = response.slices;
       });
   };
 
@@ -36,89 +42,139 @@ app.controller('qosCtrl', ['$rootScope', '$scope', '$http', function($rootScope,
   $scope.getList();
 
   $scope.editRecord = function(ap) {
-    $scope.hideform = false;
-    if (ap== 'new') {
-      $scope.edit = true;
-      $scope.incomplete = true;
-      $scope.modified = false;
+    $scope.hideSliceForm = false;
+    $scope.hideQoSForm = true;
+    if (ap== 'new') { // Create
+      $scope.inputSlice = true;
+      $scope.incompleteSlice = true;
+      $scope.modifiedSlice = false;
 
       $scope.submit_form.id ='';
-
+      $scope.submit_form.ip ='';
       $scope.submit_form.ssid = '';
-      $scope.submit_form.ap_ip= '';
-      $scope.submit_form.target_ifname= '';
-      $scope.submit_form.sudoer_id= '';
-      $scope.submit_form.sudoer_passwd='';
+      $scope.submit_form.passwd = '';
+      $scope.submit_form.rate = '';
 
-    } else {
-      $scope.edit = false;
-      $scope.modified = true;
+    } else { // Edit
+      $scope.inputSlice = false;
+      $scope.modifiedSlice = true;
 
-      $scope.submit_form.id =ap.id;
-
+      $scope.submit_form.id = ap.id;
+      $scope.submit_form.ip = ap.ip;
       $scope.submit_form.ssid = ap.ssid; 
-      $scope.submit_form.ap_ip= ap.ap_ip;
-      $scope.submit_form.target_ifname=ap.target_ifname;
-      $scope.submit_form.sudoer_id=ap.sudoer_id;
-      $scope.submit_form.sudoer_passwd=ap.sudoer_passwd;
+      $scope.submit_form.passwd = ap.passwd;
+      $scope.submit_form.rate = ap.rate;
+    }
 
+  };
+
+  $scope.editQoS = function(ap) {
+    $scope.hideSliceForm = true;
+    $scope.hideQoSForm = false;
+    if (ap== 'new') {
+      $scope.inputQoS = true;
+      $scope.incompleteQoS = true;
+      $scope.modifiedQoS = false;
+
+      $scope.submit_form2.ssid = '';
+      $scope.submit_form2.rate = '';
+    } else {
+      $scope.inputQoS = false;
+      $scope.modifiedQoS = true;
+
+      $scope.submit_form2.ssid = ap.ssid;
+      $scope.submit_form2.rate = ap.rate;
     }
 
   };
 
   $scope.delRecord = function(ap) {
-    //var _url = "http://interest.snu.ac.kr:8000/api/qos/" + ap.id;
-    var _url = "http://147.47.208.159:8000/api/qos/" + ap.ssid;
-      $http.delete(_url).success(function(response) {
-        $scope.getList();
-        $scope.hideform = true;
-      });
+    var _url = serverip + "/api/slice";
+    var req = {
+      method:'DELETE',
+      url:_url,
+      headers:{'Content-Type':undefined},
+      params:{'ssid':ap.ssid, 'id':ap.id}
+    };
+
+    $http(req).success(function(response) {
+      $scope.getList();
+      $scope.hideSliceForm = true;
+    });
   };
 
-  $scope.submit = function() {
-    //var _url = "http://interest.snu.ac.kr:8000/api/qos/" + $scope.submit_form.d;
-    var _url = "http://147.47.208.159:8000/api/qos/" + $scope.submit_form.d;
+  $scope.submitSlice = function() {
+    var _url = serverip + "/api/slice";
     var req = {
       method:'POST',
       url:_url,
       headers:{'Content-Type':undefined},
-      data:$scope.submit_form
+      params:$scope.submit_form
     };
 
-    if (!$scope.modified) {
-      req.method = 'PUT'; // temporary!
+    if (!$scope.modifiedSlice) {
+      req.method = 'PUT';
       $http(req).success(function(response) {
         $scope.getList();
-        $scope.hideform = true;
+        $scope.hideSliceForm = true;
       });
     } else {
       $http(req).success(function(response) {
         $scope.getList();
-        $scope.hideform = true;
+        $scope.hideSliceForm = true;
       });
     }
   };
 
+  $scope.submitQoS = function() {
+    var _url = serverip + "/api/sliceqos";
+    var req = {
+      method:'POST',
+      url:_url,
+      headers:{'Content-Type':undefined},
+      params:$scope.submit_form2
+    };
 
-  $scope.$watch('submit_form.ssid', function() {$scope.test();});
-  $scope.$watch('submit_form.ap_ip', function() {$scope.test();});
-  $scope.$watch('submit_form.target_ifname', function() {$scope.test();});
-  $scope.$watch('submit_form.sudoer_id', function() {$scope.test();});
-  $scope.$watch('submit_form.sudoer_passwd', function() {$scope.test();});
-  
-
-  $scope.test = function() {
-    $scope.incomplete = false;
-    if ($scope.submit_form.ssid == "" ||
-        $scope.submit_form.ap_ip == "" ||
-        $scope.submit_form.target_ifname == "" ||
-        $scope.submit_form.sudoer_id == "" ||
-        $scope.submit_form.sudoer_passwd == "") {
-      $scope.incomplete = true;
+    if (!$scope.modifiedSlice) {
+      req.method = 'PUT';
+      $http(req).success(function(response) {
+	$scope.getList();
+	$scope.hideQoSForm = true;
+      });
+    } else {
+      $http(req).success(function(response) {
+        $scope.getList();
+        $scope.hideQoSForm = true;
+      });
     }
   };
 
+  $scope.$watch('submit_form.ssid', function() {$scope.test();});
+  $scope.$watch('submit_form.id', function() {$scope.test();});
+  $scope.$watch('submit_form.ip', function() {$scope.test();});
+  $scope.$watch('submit_form.passwd', function() {$scope.test();});
+  $scope.$watch('submit_form2.ssid', function() {$scope.test2();});
+  $scope.$watch('submit_form2.rate', function() {$scope.test2();});
 
+  
+
+  $scope.test = function() {
+    $scope.incompleteSlice = false;
+    if ($scope.submit_form.ssid == "" ||
+	$scope.submit_form.ip == "" ||
+        $scope.submit_form.id == "" ||
+        $scope.submit_form.passwd == "") {
+      $scope.incompleteSlice = true;
+    }
+  };
+
+  $scope.test2 = function() {
+    $scope.incompleteQoS = false;
+    if ($scope.submit_form2.ssid == "" ||
+	$scope.submit_form2.rate == "") {
+      $scope.incompleteQoS = true;
+    }
+  };
 
 }]);
 

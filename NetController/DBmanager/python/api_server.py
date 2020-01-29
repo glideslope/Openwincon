@@ -5,11 +5,8 @@ from database import DBHandler
 
 
 from flask import Flask, jsonify, request
-#from flask.ext.restful import Api, Resource, reqparse
 from flask_restful import Api, Resource, reqparse
 from flask_restful.utils import cors
-#from flask.ext.restful.utils import cors
-#from flask.ext.cors import CORS
 from flask_cors import CORS
 
 from modules.ssh import QoSHandler
@@ -35,6 +32,7 @@ class SliceAPI(Resource):
 
   @cors.crossdomain(origin='*')
   def get(self):
+    ap_ip = request.args.
     h = QoSHandler(sudoer_id, sudoer_passwd, ap_ip)
     stdin, stdout, stderr, = h._send_cmd('echo mmlab |sudo -S /home/mmlab/Openwincon/NetController/apscript/list_slice.sh')
     return stdout.readline()

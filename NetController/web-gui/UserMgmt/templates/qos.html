@@ -19,22 +19,26 @@
         <thead>
           <tr>
             <th>AP Info.(ssid)</th>
-            <th>AP Info. (ip)</th>
-            <th>Sudoer ID</th>
-            <th>Sudoer Passwd</th>
+	    <th>AP IP</th>
+            <th>AP ID</th>
+            <th>Slice Password</th>
+            <th>Rate</th>
           </tr>
         </thead>
         <tbody>
           <tr ng-repeat="ap in aps">
             <td>{[ ap.ssid ]}</td>
-            <td>{[ ap.ap_ip ]}</td>
-            <td>{[ ap.sudoer_id ]}</td>
-            <td>{[ ap.sudoer_passwd]}</td>
+	    <td>{[ ap.ip ]}</td>
+            <td>{[ ap.id ]}</td>
+            <td>{[ ap.passwd ]}</td>
+            <td>{[ ap.rate]}</td>
             <td>
               <button class="btn" ng-click="editRecord(ap)">
-                <span class="glyphicon glyphicon-pencil"></span>  Edit
+                <span class="glyphicon glyphicon-pencil"></span>  Edit record
               </button>
-
+              <button class="btn" ng-click="editQoS(ap)">
+                <span class="glyphicon glyphicon-pencil"></span>  Edit rate
+              </button>
               <button class="btn btn-danger" ng-click="delRecord(ap)">
               <span class="glyphicon glyphicon-remove"></span> Delete
               </button>
@@ -47,14 +51,19 @@
 
   <hr>
   <button class="btn btn-success" ng-click="editRecord('new')">
-  <span class="glyphicon glyphicon-user"></span>  Register New Target AP
+  <span class="glyphicon glyphicon-user"></span>  Create Slice
+  </button>
+  
+  <button class="btn btn-success" ng-click="editQoS('new')">
+  <span class="glyphicon glyphicon-user"></span>  Create QoS
   </button>
 
   <hr>
 
-  <form class="form-horizontal" ng-hide="hideform">
-    <h3 ng-show="edit">Create New Target AP:</h3>
-    <h3 ng-hide="edit">Edit Target AP Info.:</h3>
+  <!--Slice Form--!>
+  <form class="form-horizontal" ng-hide="hideSliceForm">
+    <h3 ng-show="inputSlice">Create New AP Slice:</h3>
+    <h3 ng-hide="inputSlice">Edit Target AP Info.:</h3>
     <!--hidden value required-->
     <input type="hidden" name="id" value="">
     <div class="form-group">
@@ -62,38 +71,55 @@
       <div class="col-sm-10">
       <input type="text" ng-model="submit_form.ssid" placeholder="TEST_AP01">
       </div>
-    </div> 
+    </div>
     <div class="form-group">
       <label class="col-sm-2 control-label">AP ip:</label>
       <div class="col-sm-10">
-      <!-- <input type="text" ng-model="submit_form.ap_ip" placeholder="147.46.121.107"> -->
-      <input type="text" ng-model="submit_form.ap_ip" placeholder="147.47.209.30">
+      <input type="text" ng-model="submit_form.ip" placeholder="147.47.209.30">
       </div>
     </div>
     <div class="form-group">
-      <label class="col-sm-2 control-label">Target Interface Name:</label>
+      <label class="col-sm-2 control-label">AP id:</label>
       <div class="col-sm-10">
-      <input type="text" ng-model="submit_form.target_ifname" placeholder="wlan0">
+      <input type="text" ng-model="submit_form.id" placeholder="1">
       </div>
     </div>
     <div class="form-group">
-      <label class="col-sm-2 control-label">Sudoer ID:</label>
+      <label class="col-sm-2 control-label">passwd:</label>
       <div class="col-sm-10">
-      <input type="text" ng-model="submit_form.sudoer_id" placeholder="mmlab">
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="col-sm-2 control-label">Sudoer Password:</label>
-      <div class="col-sm-10">
-      <input type="text" ng-model="submit_form.sudoer_passwd" placeholder="mmlab">
+      <input type="text" ng-model="submit_form.passwd" placeholder="12345678">
       </div>
     </div>
 
     <hr>
-    <button class="btn btn-success" ng-disabled="incomplete" ng-click="submit();">
+    <button class="btn btn-success" ng-disabled="incompleteSlice" ng-click="submitSlice();">
     <span class="glyphicon glyphicon-save"></span>  Save Changes
     </button>
   </form>
+
+  <!-- QoS Form --!>
+  <form class="form-horizontal" ng-hide="hideQoSForm">
+    <h3 ng-show="inputQoS">Create Slice QoS:</h3>
+    <h3 ng-hide="inputQoS">Edit Target Slice QoS:</h3>
+    <input type="hidden" name="id" value="">
+    <div class="form-group">
+      <label class="col-sm-2 control-label">AP ssid:</label>
+      <div class="col-sm-10">
+      <input type="text" ng-model="submit_form2.ssid" placeholder="TEST_AP01">
+      </div>
+    </div> 
+    <div class="form-group">
+      <label class="col-sm-2 control-label">rate:</label>
+      <div class="col-sm-10">
+      <input type="text" ng-model="submit_form2.rate" placeholder="2000Kbit">
+      </div>
+    </div> 
+    <hr>
+    <button class="btn btn-success" ng-disabled="incompleteQoS" ng-click="submitQoS();">
+    <span class="glyphicon glyphicon-save"></span>  Save Changes
+    </button>
+  </form>
+  
 
   </body>
 </html>
