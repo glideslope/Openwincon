@@ -9,7 +9,7 @@ json="{ \"slices\": [ "
 for i in $dev_list; do
     rate=$(sudo tc qdisc  |grep "qdisc netem" | grep "$i " | awk '{print $15}' FS=" ")
     if [ -n "$rate" ]; then
-        json=$json" { \"name\": \""$i"\", \"rate\": \""$rate""\ " },"
+        json=$json" { \"ssid\": \""$i"\", \"rate\": \""$rate""\ " },"
     fi
 done
 
