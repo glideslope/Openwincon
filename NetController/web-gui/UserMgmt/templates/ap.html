@@ -6,20 +6,20 @@
     <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
     <script src="/static/js/ap.js"></script>
-    <title>AP Control Web GUI</title>
+    <title>IF Control Web GUI</title>
   </head>
   <body ng-app="webApp" ng-controller="apCtrl">
 
   {% include 'header.html' %}
 
-  <h3>AP Control Page</h3>
+  <h3>Interface Control Page</h3>
   <div class="modal-body row">
     <div class="col-md-6">
       <table class="table table-striped">
         <thead>
           <tr>
-            <th>AP Info.(ssid)</th>
-            <th>AP Info. (ip)</th>
+            <th>IF Info.(ssid)</th>
+            <th>IF Info. (ip)</th>
             <th>Sudoer ID</th>
             <th>Sudoer Passwd</th>
           </tr>
@@ -49,6 +49,10 @@
   <button class="btn btn-success" ng-click="editRecord('new')">
   <span class="glyphicon glyphicon-user"></span>  Register New Target AP
   </button>
+  
+  <button class="btn btn-success" ng-click="editRecordeNB('new')">
+  <span class="glyphicon glyphicon-user"></span>  Register New Target eNB
+  </button>
 
   <hr>
 
@@ -71,7 +75,7 @@
       </div>
     </div>
     <div class="form-group">
-      <label class="col-sm-2 control-label">Target Interface Name:</label>
+      <label class="col-sm-2 control-label">Target IF Name:</label>
       <div class="col-sm-10">
       <input type="text" ng-model="submit_form.target_ifname" placeholder="wlan0">
       </div>
@@ -95,5 +99,47 @@
     </button>
   </form>
 
+  <form class="form-horizontal" ng-hide="hideformeNB">
+    <h3 ng-show="editeNB">Create New Target eNB:</h3>
+    <h3 ng-hide="editeNB">Edit Target eNB Info.:</h3>
+    <!--hidden value required-->
+    <input type="hidden" name="id" value="">
+    <div class="form-group">
+      <label class="col-sm-2 control-label">eNB ssid:</label>
+      <div class="col-sm-10">
+      <input type="text" ng-model="submit_form2.ssid" placeholder="TEST_eNB01">
+      </div>
+    </div> 
+    <div class="form-group">
+      <label class="col-sm-2 control-label">eNB ip:</label>
+      <div class="col-sm-10">
+      <!-- <input type="text" ng-model="submit_form.ap_ip" placeholder="147.46.121.107"> -->
+      <input type="text" ng-model="submit_form2.ap_ip" placeholder="147.47.208.190">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="col-sm-2 control-label">Target IF Name:</label>
+      <div class="col-sm-10">
+      <input type="text" ng-model="submit_form2.target_ifname" placeholder="eno1">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="col-sm-2 control-label">Sudoer ID:</label>
+      <div class="col-sm-10">
+      <input type="text" ng-model="submit_form2.sudoer_id" placeholder="mmlab">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="col-sm-2 control-label">Sudoer Password:</label>
+      <div class="col-sm-10">
+      <input type="text" ng-model="submit_form2.sudoer_passwd" placeholder="mmlab">
+      </div>
+    </div>
+
+    <hr>
+    <button class="btn btn-success" ng-disabled="incompleteeNB" ng-click="submiteNB();">
+    <span class="glyphicon glyphicon-save"></span>  Save Changes
+    </button>
+  </form>
   </body>
 </html>

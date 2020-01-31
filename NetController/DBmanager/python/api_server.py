@@ -20,9 +20,6 @@ config = json.load(open('./config.json', 'r'))
 
 db_handler = DBHandler(config)
 
-sudoer_id = "mmlab"
-sudoer_passwd ="mmlab"
-ap_ip = "147.47.209.30"
 
 class SliceAPI(Resource):
   def __init__(self):

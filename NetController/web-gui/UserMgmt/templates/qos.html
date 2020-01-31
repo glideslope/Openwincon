@@ -18,9 +18,9 @@
       <table class="table table-striped">
         <thead>
           <tr>
-            <th>AP Info.(ssid)</th>
-	    <th>AP IP</th>
-            <th>AP ID</th>
+            <th>IF Info.(ssid)</th>
+	    <th>IF IP</th>
+            <th>IF ID</th>
             <th>Slice Password</th>
             <th>Rate</th>
           </tr>
@@ -62,24 +62,24 @@
 
   <!--Slice Form--!>
   <form class="form-horizontal" ng-hide="hideSliceForm">
-    <h3 ng-show="inputSlice">Create New AP Slice:</h3>
-    <h3 ng-hide="inputSlice">Edit Target AP Info.:</h3>
+    <h3 ng-show="inputSlice">Create New Interface Slice:</h3>
+    <h3 ng-hide="inputSlice">Edit Target Interface Info.:</h3>
     <!--hidden value required-->
     <input type="hidden" name="id" value="">
     <div class="form-group">
-      <label class="col-sm-2 control-label">AP ssid:</label>
+      <label class="col-sm-2 control-label">IF ssid:</label>
       <div class="col-sm-10">
-      <input type="text" ng-model="submit_form.ssid" placeholder="TEST_AP01">
+      <input type="text" ng-model="submit_form.ssid" placeholder="TEST_IF01">
       </div>
     </div>
     <div class="form-group">
-      <label class="col-sm-2 control-label">AP ip:</label>
+      <label class="col-sm-2 control-label">IF ip:</label>
       <div class="col-sm-10">
       <input type="text" ng-model="submit_form.ip" placeholder="147.47.209.30">
       </div>
     </div>
     <div class="form-group">
-      <label class="col-sm-2 control-label">AP id:</label>
+      <label class="col-sm-2 control-label">IF id:</label>
       <div class="col-sm-10">
       <input type="text" ng-model="submit_form.id" placeholder="1">
       </div>
@@ -103,13 +103,13 @@
     <h3 ng-hide="inputQoS">Edit Target Slice QoS:</h3>
     <input type="hidden" name="id" value="">
     <div class="form-group">
-      <label class="col-sm-2 control-label">AP ssid:</label>
+      <label class="col-sm-2 control-label">IF ssid:</label>
       <div class="col-sm-10">
-      <input type="text" ng-model="submit_form2.ssid" placeholder="TEST_AP01">
+      <input type="text" ng-model="submit_form2.ssid" placeholder="TEST_IF01">
       </div>
     </div> 
     <div class="form-group">
-      <label class="col-sm-2 control-label">AP ip:</label>
+      <label class="col-sm-2 control-label">IF ip:</label>
       <div class="col-sm-10">
       <input type="text" ng-model="submit_form2.ip" placeholder="147.47.209.30">
       </div>
