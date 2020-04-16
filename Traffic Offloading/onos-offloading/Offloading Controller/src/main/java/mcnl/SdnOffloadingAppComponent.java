@@ -90,15 +90,47 @@ public class SdnOffloadingAppComponent implements ForwardingMapService{
 
     String[][] OVS;
 
+    ///////////////////////////////////////////////////////////////////////////
+    //////////////////////////      algorithm       ///////////////////////////
+    ///////////////////////////////////////////////////////////////////////////
+    static final int START_TIME = 10;
+    static final double KAPPA = 0.0018;	
+    static final double MAX_RATE_LTE[] = {10 * 1024 , 20 * 1024 };	// 20 Mbps, 20 Kbps SIMULATION
+    static final int PATH_MONITORING_DURATION = 1; // 4s		// auction monitoring duration
+    static final int N_UE = 25; // the total number of UEs
+
+    static double omega = 0.01;
+
+    static Vector<Player> players = new Vector<Player>();
+
+//    static NetDeviceContainer ueDevices; // TODO: from ns3
+    static int [] ueCellid = {2, 1, 2, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2, 2, 1, 1, 2, 2, 2, 1, 2, 1};
+
+    static double targetQual = 0;
+
+    static double k = 1024; // k = 10 * 1024; // R&R revision : 10
 
     private void initSetting()
     {
-        // TODO
-        // setting the MAC address and port number of OVSs
+        for(int i = 0; i < N_UE; i++) {
+            Player player = new Player(i);
+            players.add(player);
+        }
 
+        /* enrollProxyOVS */
         OVS = new String[numOfNode+1][numOfPort+1];
+        // TODO:
+        // setting the MAC address and port number of OVSs
+        //ContentArray = new String[numOfContent+1][numOfNode+1];
 
-        // (example) OVS[1][1] = "of:000000e04c36006f/1";
+        //setUpConnectivity(getConnectPoint(OVS[1][1]),getConnectPoint(OVS[1][2]), 50);
+        //setUpConnectivity(getConnectPoint(OVS[1][2]),getConnectPoint(OVS[1][1]), 50);
+
+        //setUpConnectivity(getConnectPoint(OVS[2][1]),getConnectPoint(OVS[2][2]), 50);
+        //setUpConnectivity(getConnectPoint(OVS[2][2]),getConnectPoint(OVS[2][1]), 50);
+
+        //setUpConnectivity(getConnectPoint(OVS[2][1]),getConnectPoint(OVS[2][2]), 50);
+        //setUpConnectivity(getConnectPoint(OVS[2][2]),getConnectPoint(OVS[2][1]), 50);
     }
 
     @Activate
@@ -153,10 +185,261 @@ public class SdnOffloadingAppComponent implements ForwardingMapService{
     }
 
 
-
-
     private void trafficMonitoring(){
 
+    }
+
+    private void allocateResource(short cell){
+        ///////////////////////////////////////////////////////////////////////////////
+        //////////////////                 algorithm                ///////////////////
+        ///////////////////////////////////////////////////////////////////////////////
+        //  UE's cell location check
+
+        for (int i=0; i<players.size(); i++) {
+            Player it = players.get(i);
+
+//            Ptr<LteUeNetDevice> ueLteDevice = ueDevices.Get(i)->GetObject<LteUeNetDevice> ();
+//            Ptr<LteUeRrc> ueRrc = ueLteDevice->GetRrc();
+//
+//            if (ueRrc.GetCellId() - 1 == cell) { // cell id start from 1
+//                if(cell == 0)
+//                    NS_LOG_FUNCTION("id" << it.getID() << it.getUEAddr() << " belongs to eNB " << cell); //TODO: getUEADDR is used only once...
+//                it.setCellID(cell);
+//            }
+//            else {
+//                it.setCellID((cell + 1) % 2); // 0->1, 1->0
+//            }
+            if(ueCellid[i] - 1 == cell)
+                it.setCellID(cell);
+            else
+                it.setCellID((short)((cell + 1) % 2)); // 0->1, 1->0
+        }
+
+        int gopIndex;
+
+        for (int i=0; i<players.size(); i++) {
+            Player it = players.get(i);
+            if (cell == 0 && it.getCellID() == cell) {
+                gopIndex = (int) (System.currentTimeMillis()/1000 - START_TIME + it.getJoinTime()) % 60;
+//                std::cout << "USER ID : " << it.getID() << " PSNR : " << it.ratetoPSNR(it.getSmallRsc(it.getID(), (int) System.currentTimeMillis()/1000)), gopIndex) << std::endl;
+            }
+        }
+
+        //  Algorithm 2
+        targetQual = 0;
+        double minQual = 0;
+        double maxQual = 0;
+        double newQual = 0;
+        double rQual = 0; // resource
+
+        // get max PSNR
+        for (int i=0; i<players.size(); i++) {
+            Player it = players.get(i);
+            gopIndex = (int) (System.currentTimeMillis()/1000 - START_TIME + it.getJoinTime()) % 60;
+            if (it.ratetoPSNR((it.getSmallRsc(it.getID(), (int) System.currentTimeMillis()/1000) + MAX_RATE_LTE[cell]), gopIndex) >= maxQual)
+                maxQual = it.ratetoPSNR((it.getSmallRsc(it.getID(), (int) System.currentTimeMillis()/1000) + MAX_RATE_LTE[cell]), gopIndex);
+        }
+
+        // determine targetQual (newQual)
+        int iter = 0;
+        do {
+            rQual = 0;
+            newQual = (minQual + maxQual)/2;
+
+            if(cell == 0)
+//                NS_LOG_FUNCTION("New Quality : " << newQual);
+
+                for (int i=0; i<players.size(); i++) {
+                    Player it = players.get(i);
+                    if (it.getCellID() == cell) {
+                        gopIndex = (int) (System.currentTimeMillis()/1000 - START_TIME + it.getJoinTime()) % 60;
+                        if (newQual > it.ratetoPSNR(it.getSmallRsc(it.getID(), (int) System.currentTimeMillis()/1000), gopIndex)) {
+                            double coef = (newQual-it.ratetoPSNR(it.getSmallRsc(it.getID(), (int) System.currentTimeMillis()/1000), gopIndex)) / (10.0 * it.getBETA(gopIndex)*(1.0 + KAPPA));
+                            rQual += it.getSmallRsc(it.getID(), (int) System.currentTimeMillis()/1000) * ((1.0 / Math.pow(10, coef)) -1 );
+                            //NS_LOG_FUNCTION( "ID : " << it.getID() << ",  #### Required Resources : " <<  rQual);
+                        }
+                    }
+                }
+            //NS_LOG_FUNCTION("@@@@ Required Resources : " << rQual << ", @@@@ MAX_RATE_LTE : " <<  MAX_RATE_LTE[cell]);
+//            if(cell == 0)
+//                std::cout << ":: ALGORITM 1 :: " << " Stage : " << iter <<  " , NewQuality : " << newQual << " , Resource : " << rQual << std::endl;
+
+            if(rQual < MAX_RATE_LTE[cell])
+                minQual = newQual;
+            else
+                maxQual = newQual;
+            iter ++;
+        } while (iter !=20 );//(abs(MAX_RATE_LTE[cell] - rQual) / MAX_RATE_LTE[cell] > ebsilon); //(iter !=20 );  //(abs(MAX_RATE_LTE[cell] - rQual) / MAX_RATE_LTE[cell] > ebsilon);
+
+        targetQual = newQual;
+
+//        if(cell == 0){
+//            std::cout << ":: ALGORITM 1 :: " << " Target video quality level : " << targetQual << std::endl << std::endl;
+//            NS_LOG_FUNCTION("Cell ID : " << cell << ",  Target video quality level : " << targetQual);
+//        }
+
+        // bargaining power for video quality fairness
+        double totalQualBp = 0;
+        double myQualBp = 0;
+
+        for (int i=0; i<players.size(); i++) {
+            Player it = players.get(i);
+            if (it.getCellID() == cell){
+                gopIndex = (int) (System.currentTimeMillis()/1000 - START_TIME + it.getJoinTime()) % 60;
+                double denomiator = it.getBETA(gopIndex)*(1+KAPPA);
+                double onlyAP_PSNR = it.ratetoPSNR(it.getSmallRsc(it.getID(), (int) System.currentTimeMillis()/1000), gopIndex);
+                totalQualBp += (it.getSmallRsc(it.getID(), (int) System.currentTimeMillis()/1000)/denomiator)
+                        * Math.pow(10, (onlyAP_PSNR-targetQual)/(10*denomiator));
+            }
+        }
+
+        for (int i=0; i<players.size(); i++) {
+            Player it = players.get(i);
+            if (it.getCellID() == cell){
+                gopIndex = (int) (System.currentTimeMillis()/1000- START_TIME + it.getJoinTime()) % 60;
+                double myDenomiator = it.getBETA(gopIndex)*(1+KAPPA);
+                double myOnlyAP_PSNR = it.ratetoPSNR(it.getSmallRsc(it.getID(), (int) System.currentTimeMillis()/1000), gopIndex);
+                myQualBp = (it.getSmallRsc(it.getID(), (int) System.currentTimeMillis()/1000)/myDenomiator) * Math.pow(10, (myOnlyAP_PSNR-targetQual)/(10*myDenomiator));
+                it.setQualBP(myQualBp/totalQualBp);
+            }
+        }
+
+        if(cell == 0)
+            System.out.println();
+
+        // check total sum 1
+        double sum = 0;
+        for (int i=0; i<players.size(); i++) {
+            Player it = players.get(i);
+            if (it.getCellID() == cell) {
+                sum += it.getQualBP();
+//                if(cell == 0){
+//                    std::cout << ":: BP for Qual :: " << " USER ID : " << it.getID() << " , BP : " << it.getQualBP() << std::endl;
+//                    NS_LOG_FUNCTION("Quality Bargaining Power : " << it.getQualBP());
+//                }
+            }
+        }
+//        if(cell == 0)
+//            std::cout <<  std::endl;
+
+        // bargaining power for highest social welfare
+        int numOfUsers = 0;
+        for (int i=0; i<players.size(); i++) {
+            Player it = players.get(i);
+            if (it.getCellID() == cell) {
+                numOfUsers ++;
+            }
+        }
+//        if(cell == 0)
+//            NS_LOG_FUNCTION("Total Number of Users : " << numOfUsers);
+
+        for (int i=0; i<players.size(); i++) {
+            Player it = players.get(i);
+            if (it.getCellID() == cell) {
+                it.setSocialBP(1.0/numOfUsers);
+//                if(cell == 0) {
+//                    std::cout << ":: BP for Social :: " << " USER ID : " << it.getID() << " , BP : " << it.getSocialBP() << std::endl;
+//                    NS_LOG_FUNCTION("Social Bargaining Power : " << it.getSocialBP());
+//                }
+            }
+        }
+        // bargaining power (omega) control
+        //omega = 1 / (1 + exp( C1 * (targetQual - C2)));
+        omega = 0;
+
+        for (int i=0; i<players.size(); i++) {
+            Player it = players.get(i);
+            if (it.getCellID() == cell) {
+                it.setBP(omega);
+            }
+        }
+        // check whether total sum of BP is one
+        sum = 0;
+        for (int i=0; i<players.size(); i++) {
+            Player it = players.get(i);
+            if (it.getCellID() == cell) {
+                sum += it.getBP();
+            }
+        }
+        //NS_LOG_FUNCTION("Total Sum of Bargaining Power : " << sum);
+
+//        if(cell == 0)
+//            NS_LOG_FUNCTION("@@@@@@@@@@@@@@@ Radio Resource allocation @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+
+
+        // Sequential-Splitting
+
+        double m = 0;
+        for (int i=0; i<players.size(); i++) {
+            Player it = players.get(i);
+            if (it.getCellID() == cell) {
+                it.setMacroRsc(0);
+            }
+        }
+
+        int j = players.get(0).getID();
+        double temp, minimum;
+        gopIndex = (int) System.currentTimeMillis()/1000;
+        minimum = 0;
+        //std::sort(players.begin(), players.end(), cmp);
+        while (k != m) {
+            for (int i=0; i<players.size(); i++) {
+                Player it = players.get(i);
+                if (it.getCellID() == cell) {
+                    if(it.getSmallRsc(it.getID(), (int) System.currentTimeMillis()/1000) >= minimum &&
+                            it.ratetoPSNR((it.getSmallRsc(it.getID(), (int) System.currentTimeMillis()/1000) + it.getMacroRsc()), gopIndex) < 35){
+                        temp = it.getSmallRsc(it.getID(), (int) System.currentTimeMillis()/1000);
+                        j = it.getID();
+                    }
+                }
+            }
+
+            for (int i=0; i<players.size(); i++) {
+                Player it = players.get(i);
+                if (it.getID() == j) {
+                    double rsc = it.getMacroRsc() + MAX_RATE_LTE[cell] / k;
+                    it.setMacroRsc(rsc);
+                    break;
+                }
+            }
+            m++;
+        }
+
+        // check the amount of radio resource
+        double total_sum_rsc = 0;
+        for (int i=0; i<players.size(); i++) {
+            Player it = players.get(i);
+            if (it.getCellID() == cell) {
+                total_sum_rsc += it.getMacroRsc();
+                if(cell == 0){
+                    gopIndex = (int) (System.currentTimeMillis()/1000 -START_TIME + it.getJoinTime()) % 60;
+//                    std::cout <<  " USER ID : " << it.getID() << ", Small Cell Resource : " << it.getSmallRsc(it.getID(), (int) System.currentTimeMillis()/1000)
+//						<< " , Small Cell PSNR : " << it.ratetoPSNR((it.getSmallRsc(it.getID(), (int) System.currentTimeMillis()/1000)), gopIndex)
+//						<< " , Macro Resource : " << it.getMacroRsc()
+//                            << ", With Macro PSNR : " << it.ratetoPSNR((it.getSmallRsc(it.getID(), (int) System.currentTimeMillis()/1000) + it.getMacroRsc()), gopIndex) << std::endl;
+//                    NS_LOG_FUNCTION("User ID : " << it.getID() << ", resource : " << it.getMacroRsc());
+                }
+            }
+        }
+
+
+//        if(cell == 0) {
+//            std::cout << ":: Total Amount of Macro Resource :: " << total_sum_rsc << std::endl;
+//            NS_LOG_FUNCTION("Total amount of allocated resources  : " << total_sum_rsc);
+//        }
+
+        //currentRound[cell] = 0;
+        //transmitVideo(round, cell);
+        for (int i=0; i<players.size(); i++) {
+            Player it = players.get(i);
+            if (it.getCellID() == cell)
+                it.initialize();
+        }
+//        Simulator::Schedule(Seconds(PATH_MONITORING_DURATION), &bargaining, cell); // start time, gopIndex, round // TODO: apply resource allocation
+
+        ///////////////////////////////////////////////////////////////////////////////
+        //////////////////            end of algorithm              ///////////////////
+        ///////////////////////////////////////////////////////////////////////////////
     }
 
     private void getMinTrafficPath(/*Device src, Device dst,String connectPoint*/int mRoute) {
@@ -187,18 +470,27 @@ public class SdnOffloadingAppComponent implements ForwardingMapService{
             }
         }
 
-
         TrafficSelector selector = DefaultTrafficSelector.emptySelector();
         TrafficTreatment treatment = DefaultTrafficTreatment.emptyTreatment();
 
 
-        // TODO
+        // TODO:
         // read the flow rule from .txt file
         // and parse it
         if( mRoute == 0)
+
         {
             // Set the Flow Rule
             // (example) setUpConnectivity(getConnectPoint("MAC addr and port num of OVS"), getConnectPoint("MAC addr and port num of OVS"), priority);
+
+            // setUpConnectivity(getConnectPoint(OVS[3][3]),getConnectPoint(OVS[3][1]), 50);
+            // setUpConnectivity(getConnectPoint(OVS[3][1]),getConnectPoint(OVS[3][3]), 50);
+
+            // setUpConnectivity(getConnectPoint(OVS[1][3]),getConnectPoint(OVS[1][2]), 50);
+            // setUpConnectivity(getConnectPoint(OVS[1][2]),getConnectPoint(OVS[1][3]), 50);
+
+            // setUpConnectivity(getConnectPoint(OVS[2][1]),getConnectPoint(OVS[2][2]), 50);
+            // setUpConnectivity(getConnectPoint(OVS[2][2]),getConnectPoint(OVS[2][1]), 50);
         }
 
 
@@ -325,8 +617,11 @@ public class SdnOffloadingAppComponent implements ForwardingMapService{
 
         if(connectPoint.equals("3"))
             send("bash initialization.sh");
-        else
+        else {
             getMinTrafficPath(Integer.parseInt(connectPoint));
+            allocateResource((short) 0); // test
+            allocateResource((short) 1);
+        }
 
     }
 
