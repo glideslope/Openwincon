@@ -1,0 +1,4 @@
+name, ip, port
+client, , 80
+server, xxx.xxx.xxx.xxx,
+gen, xxx.xxx.xxx.xxx, 8000
