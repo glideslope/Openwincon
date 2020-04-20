@@ -1,6 +1,7 @@
 # AP  
 python 폴더  
-- 아래 사항들 설정
+- 아래 사항들 (bridge, wlan) 설정
+- list_device.csv에서 collector의 IP 변경 (xxx.xxx.xxx.xxx를 SDN Controller IP로 변경)
 - collector_ap.py 실행
 
 <br>
