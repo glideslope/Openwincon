@@ -22,13 +22,16 @@
 PSNR 수식 (Excel 사용)
 
  - Big Buck Bunny
-    - PSNR(r) = 5.5774 * log(rate) + 1.72
+    - ![404 Not Found](https://raw.githubusercontent.com/glideslope/Openwincon/master/Global%20Dash%20Streaming/_image/formula_psnr_bunny.png)
  - Elephants Dream
-    - PSNR(r) = 5.6129 * log(rate) + 2.1793
+    - ![404 Not Found](https://raw.githubusercontent.com/glideslope/Openwincon/master/Global%20Dash%20Streaming/_image/formula_psnr_elephant.png)
  - Sintel
-    - PSNR(r) = 4.538 * log(rate) + 11.865
+    - ![404 Not Found](https://raw.githubusercontent.com/glideslope/Openwincon/master/Global%20Dash%20Streaming/_image/formula_psnr_sintel.png)
    
 <br>
+
+Bandwidth 모델
+- ![404 Not Found](https://raw.githubusercontent.com/glideslope/Openwincon/master/Global%20Dash%20Streaming/_image/formula_bandwidth.png)
 
 # Reference   
 - Dash Example
