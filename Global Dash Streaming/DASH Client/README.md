@@ -4,7 +4,7 @@ python 폴더
 - 무선 랜카드를 2개 장착 (내장 포함)
 - 아래의 Falcon Proxy를 설치
 - Proxy Server 설정 
-    - ![404 Not Found](../_image/setting_proxy?raw=true)
+    - ![404 Not Found](../_image/setting_proxy.png?raw=true)
 - web_client.py 실행
 
 <br>
