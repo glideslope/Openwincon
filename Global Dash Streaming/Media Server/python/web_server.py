@@ -106,15 +106,31 @@ class HandlerHTTP(BaseHTTPRequestHandler):
 
 	def do_GET(self):
 		try:
+			is_ready = True
 
 			if ".m4s" in self.path:
 				mode_divide = True
 			else:
 				mode_divide = False
 				if self.path == "/":
-					object = "index.html"
+					object = "../html/index.html"
+				elif self.path == "/index":
+					object = "../html/index.html"
+				elif self.path == "/index.html":
+					object = "../html/index.html"
+
+				elif self.path[-3:] == ".js":
+					object = "../html" + self.path
+
+				elif self.path[-4:] == ".ico":
+					is_ready = False
+				elif self.path[-4:] == ".map":
+					is_ready = False
 				else:
 					object = self.path[1:]
+
+			if is_ready is not True:
+				raise FileNotFoundError
 
 			if mode_divide == False:
 				self._set_headers(200)
