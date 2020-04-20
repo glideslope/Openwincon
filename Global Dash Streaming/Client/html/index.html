@@ -1,0 +1,11 @@
+<!-- saved from url=http://www-itec.uni-klu.ac.at/dash/js/dash-js/dashtest-ibmff.html -->
+<video id=example-video width=600 height=300 class="video-js vjs-default-skin" controls> </video>
+
+<script src="js/video.js"></script>
+<script src="js/dash.all.debug.js"></script>
+<script src="js/videojs-dash.js"></script>
+<script>
+	var player = videojs('example-video');
+	player.src({ src: 'dash.mpd', type: 'application/dash+xml'});
+	player.play();
+</script>
