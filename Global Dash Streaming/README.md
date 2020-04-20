@@ -22,16 +22,18 @@
 PSNR 수식 (Excel 사용)
 
  - Big Buck Bunny
-    - ![404 Not Found](https://raw.githubusercontent.com/glideslope/Openwincon/master/Global%20Dash%20Streaming/_image/formula_psnr_bunny.png)
+    - ![404 Not Found](_image/formula_psnr_bunny.png?raw=true)
  - Elephants Dream
-    - ![404 Not Found](https://raw.githubusercontent.com/glideslope/Openwincon/master/Global%20Dash%20Streaming/_image/formula_psnr_elephant.png)
+    - ![404 Not Found](_image/formula_psnr_elephant.png?raw=true)
  - Sintel
-    - ![404 Not Found](https://raw.githubusercontent.com/glideslope/Openwincon/master/Global%20Dash%20Streaming/_image/formula_psnr_sintel.png)
+    - ![404 Not Found](_image/formula_psnr_sintel.png?raw=true)
    
 <br>
 
 Bandwidth 모델
-- ![404 Not Found](https://raw.githubusercontent.com/glideslope/Openwincon/master/Global%20Dash%20Streaming/_image/formula_bandwidth.png)
+- ![404 Not Found](_image/formula_bandwidth.png?raw=true)
+
+<br>
 
 # Reference   
 - Dash Example
