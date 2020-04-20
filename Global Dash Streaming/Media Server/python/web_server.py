@@ -68,7 +68,7 @@ def divideChunk(port):
 				print("connected...")
 				raw = con.recv(CONST_KB).decode("utf-8")
 				query = raw.split("/")[-1]
-				object = query.split("?")[0]
+				object = "../media/" + query.split("?")[0]
 				file = open(object, "rb")
 				byte_data = file.read()
 
@@ -106,9 +106,7 @@ class HandlerHTTP(BaseHTTPRequestHandler):
 
 	def do_GET(self):
 		try:
-			is_ready = True
-
-			if ".m4s" in self.path:
+			if self.path[-4:] == ".m4s":
 				mode_divide = True
 			else:
 				mode_divide = False
@@ -122,16 +120,14 @@ class HandlerHTTP(BaseHTTPRequestHandler):
 				elif self.path[-3:] == ".js":
 					object = "../html" + self.path
 
-				elif self.path[-4:] == ".ico":
-					is_ready = False
-				elif self.path[-4:] == ".map":
-					is_ready = False
+				elif self.path[-4:] == ".mpd":
+					object = "../media" + self.path
+				elif self.path[-4:] == ".mp4":
+					object = "../media" + self.path
+
 				else:
-					object = self.path[1:]
-
-			if is_ready is not True:
-				raise FileNotFoundError
-
+					raise FileNotFoundError
+				
 			if mode_divide == False:
 				self._set_headers(200)
 				file = open(object, "rb")
