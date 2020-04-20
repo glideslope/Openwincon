@@ -9,24 +9,35 @@
 <br>
 
 # Test Setting  
+3개의 비디오 사용  
 
-- Use **Big Buck Bunny** animation    
-- **Five** bitrate version
-  - 50 kbps
-  - 400 kbps
-  - 800 kbps
-  - 1200 kbps
-  - 2000 kbps
-- **PSNR** can be expressed using **bitrate**  
-  - PSNR(r) = 6.4157 * log(rate) + 22.27  
-  - derived from Excel program
-  
+ - Big Buck Bunny
+ - Elephants Dream
+ - Sintel
+<br>
+인코딩 bitrate
+
+- [50, 100, 150, 200, 250, 300, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000, 1050, 1100, 1150, 1200, 1250, 1300, 1350, 1400, 1450, 1500, 2000, 2500, 3000, 4000, 5000, 6000, 8000] kbps
+<br>
+PSNR 수식 (Excel 사용)
+
+ - Big Buck Bunny
+    - PSNR(r) = 5.5774 * log(rate) + 1.72
+ - Elephants Dream
+    - PSNR(r) = 5.6129 * log(rate) + 2.1793
+ - Sintel
+    - PSNR(r) = 4.538 * log(rate) + 11.865
+   
 <br>
 
 # Reference   
 - Dash Example
 ```
-https://docs.microsoft.com/ko-kr/azure/media-services/previous/media-services-embed-mpeg-dash-in-html5 
+http://www-itec.uni-klu.ac.at/dash/js/dash-js/dashtest-ibmff.html  
+```
+- Videos
+```
+https://media.xiph.org/
 ```
 - SDN Application Example
 ```
@@ -35,8 +46,4 @@ http://uni2u.tistory.com/44
 - Python Simple Web Server
 ```
 https://gist.github.com/bradmontgomery/2219997
-```
-- Tensorflow DQN Example
-```
-https://github.com/golbin/TensorFlow-Tutorials
 ```
