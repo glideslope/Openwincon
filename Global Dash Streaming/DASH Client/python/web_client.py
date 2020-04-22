@@ -1,8 +1,10 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.request import urlopen
+from socket import *
+
 import os
 import sys
-from socket import *
+import re
 
 CONST_KB = 1024
 
@@ -87,7 +89,16 @@ class HandlerProxy(BaseHTTPRequestHandler):
 		print(self.path)
 
 		if ".m4s" in self.path:
-			query = self.path + "?x=0.5"
+
+			socket_control = socket()
+			socket_control.connect((dic_device["control"]["ip"], dic_device["control"]["port"]))
+			list_data = socket_control.recv(CONST_KB).decode().split("/")
+			str_bitrate = list_data[0]
+			str_ratio = list_data[1]
+			socket_control.close()
+
+			self.path = re.sub(r"\d+K|\d+M", str_bitrate, self.path)
+			query = self.path + "?x=" + str_ratio
 
 			byte_data = bytes(b"")
 			for i, element in enumerate(list_adaptor):
