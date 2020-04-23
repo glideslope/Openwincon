@@ -10,8 +10,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Test {
-	final static int CONST_PORT_RSSI = 20000;
-	final static int CONST_PORT_CONTROL = 30000;
+	final static int PORT_RSSI = 20000;
+	final static int PORT_CONTROL = 30000;
+	
+	final static double MAX_LAM = 1;
+	final static double MIN_LAM = 0;
+	
+	final static double ERROR_LAM = 0.00001;
+	
+	final static double DELTA_X = 0.005;
 	
 	final static int[] ARRAY_BITRATE = {50, 100, 150, 200, 250, 300, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000, 1050, 1100, 1150, 1200, 1250, 1300, 1350, 1400, 1450, 1500, 2000, 2500, 3000, 4000, 5000, 6000, 8000};
 	final static double[] PARA_PSNR[] = new double[][]{{5.5774, 1.72}, {5.6129, 2.1793}, {4.538, 11.865}};
@@ -31,15 +38,29 @@ public class Test {
 	 * Sintel:		2 */
 	private static Map<String, Integer> map_video;
 	
-	public static int getBandwidth(int rssi) {
+	private static int getBandwidth(int rssi) {
 		int bandwidth = (int) (2460.672 * (1 - Math.exp(-0.11 * (rssi + 81.7))));
 		if (bandwidth <= 0)
-			bandwidth = 1;
+			bandwidth = ARRAY_BITRATE[0];
 		return bandwidth;
 	}
 	
-	public static double getPSNR(int bitrate, int video) {
+	private static double getPSNR(int bitrate, int video) {
 		return PARA_PSNR[video][0] * Math.log(bitrate) + PARA_PSNR[video][1];
+	}
+	
+	private static void quantizeBitrate() {
+		Map<String, Integer> map_quantized = new HashMap<String, Integer>();
+		
+		ArrayList<Integer> array_upper = new ArrayList<Integer>();
+		for (String ue: array_ue) {
+			if (map_rate.get(ue) <= ARRAY_BITRATE[0]) {
+				array_upper.add(0);
+				continue;
+			}
+			
+			
+		}
 	}
 	
 	public static void main(String[] args) {
@@ -53,7 +74,55 @@ public class Test {
 		map_rate = new HashMap<String, Integer>();
 		map_video = new HashMap<String, Integer>();
 		
-		System.out.println(getBandwidth(-60));
+		/* Debug for 알고리즘 */
+		for (int i = 1; i <= 3; i++) {
+			array_ue.add("UE" + i);
+			map_ue.put("UE" + i, new UE());
+		}
+		for (int j = 1; j <= 2; j++)
+			array_ap.add("AP" + j);
+		
+		map_video.put("UE1", 2);
+		map_video.put("UE2", 0);
+		map_video.put("UE3", 1);
+		
+		map_ue.get("UE1").setRSSI("AP1", -72);
+		map_ue.get("UE1").setRatio("AP1", 1);
+		map_ue.get("UE1").setRSSI("AP2", -79);
+		map_ue.get("UE1").setRatio("AP2", 0);
+		map_ue.get("UE2").setRSSI("AP1", -67);
+		map_ue.get("UE2").setRatio("AP1", 0);
+		map_ue.get("UE2").setRSSI("AP2", -60);
+		map_ue.get("UE2").setRatio("AP2", 1);
+		map_ue.get("UE3").setRSSI("AP1", -62);
+		map_ue.get("UE3").setRatio("AP1", 0);
+		map_ue.get("UE3").setRSSI("AP2", -56);
+		map_ue.get("UE3").setRatio("AP2", 1);
+
+		/* 함수화 하기 */
+		double lam_pre = MAX_LAM;
+		double lam_mid = (MAX_LAM + MIN_LAM) / 2;
+		double max_psnr = 0;
+		while(true) {
+			ArrayList<Integer> array_bandwidth = new ArrayList<Integer>();
+			double sum_bandwidth = 0;
+			for (String ue: array_ue) {
+				for (String ap: array_ap) {
+					double x = map_ue.get(ue).getRatio(ap);
+					double bandwidth = getBandwidth(map_ue.get(ue).getRSSI(ap));
+					sum_bandwidth += x * bandwidth;
+				}
+				array_bandwidth.add((int)(sum_bandwidth));
+				int video = map_video.get(ue);
+				int rate = (int)(PARA_PSNR[video][0] / lam_mid);
+				map_rate.put(ue, rate);
+			}
+			
+			for (String ue: array_ue)
+				System.out.println(map_rate.get(ue));
+			break;
+		}
+		
 		System.out.println(getPSNR(1000, 1));
 	}
 	
@@ -95,7 +164,7 @@ public class Test {
 			while(true) {
 				ServerSocket socket_server = null;
 				try {
-					socket_server = new ServerSocket(CONST_PORT_RSSI);
+					socket_server = new ServerSocket(PORT_RSSI);
 					Socket socket_client = socket_server.accept();
 					
 					BufferedReader reader = new BufferedReader(new InputStreamReader(socket_client.getInputStream(), "UTF-8"));
@@ -142,7 +211,7 @@ public class Test {
 			while(true) {
 				ServerSocket socket_server = null;
 				try {
-					socket_server = new ServerSocket(CONST_PORT_CONTROL);
+					socket_server = new ServerSocket(PORT_CONTROL);
 					Socket socket_client = socket_server.accept();
 
 					BufferedReader reader = new BufferedReader(new InputStreamReader(socket_client.getInputStream(), "UTF-8"));
