@@ -36,4 +36,45 @@ dash.all.debug.js
 <br>
 
 # 영상 인코딩
-추가 예정
+- 필요 소프트웨어
+
+<br>
+
+FFmpeg
+```
+https://www.ffmpeg.org/
+```
+MP4Box
+```
+https://gpac.wp.imt.fr/tag/mp4box/
+```
+
+<br>
+
+- 원본 -> mp4로 변환하기
+```
+ffmpeg -i <원본 파일> -c:v libx264 -preset ultrafast -qp 0 -pix_fmt yuv420p -movflags +faststart <mp4 파일>
+
+ex)
+ffmpeg -i bunny.y4m -c:v libx264 -preset ultrafast -qp 0 -pix_fmt yuv420p -movflags +faststart bunny.mp4
+```
+
+<br>
+
+- 특정 비트레이트로 인코딩
+```
+ffmpeg -i <mp4 파일> -b:v <비트레이트> <해당 비트레이트로 인코딩된 mp4파일>
+
+ex)
+ffmpeg -i bunny -b:v 200K bunny_200K.mp4
+```
+
+<br>
+
+- DASH 세그먼트 만들기
+```
+MP4Box -dash <재생 시간(ms)> -profile live -out dash.mp4 <특정 비트레이트로 인코딩된 mp4파일> <특정 비트레이트로 인코딩된 mp4파일> ...
+
+ex)
+MP4Box -dash 2000 -profile live -out dash.mp4 bunny_200K.mp4 bunny_300K.mp4 bunny_400K.mp4
+```
