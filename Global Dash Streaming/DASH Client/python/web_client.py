@@ -99,6 +99,7 @@ class HandlerProxy(BaseHTTPRequestHandler):
 
 			self.path = re.sub(r"\d+K|\d+M", str_bitrate, self.path)
 			query = self.path + "?x=" + str_ratio
+			print("Adjusted:", query)
 
 			byte_data = bytes(b"")
 			for i, element in enumerate(list_adaptor):
@@ -141,6 +142,13 @@ if __name__ == "__main__":
 		sys.exit()
 
 	list_adaptor = getInterface()
+	len_adaptor = len(list_adaptor)
+	if len_adaptor == 1:
+		print("무선 LAN을 하나 더 장착해주세요")
+		sys.exit()
+	elif len_adaptor > 2:
+		print("지원가능한 무선 LAN의 갯수는 2개 입니다.")
+		sys.exit()
 
 	dic_device["server"]["port"] = getPort()
 
