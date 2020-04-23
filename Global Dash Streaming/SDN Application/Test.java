@@ -72,9 +72,14 @@ public class Test {
 				try {
 					socket_server = new ServerSocket(CONST_PORT_CONTROL);
 					Socket socket_client = socket_server.accept();
+
+					BufferedReader reader = new BufferedReader(new InputStreamReader(socket_client.getInputStream(), "UTF-8"));
+					String str_bitrate_origin = reader.readLine();
+					System.out.println(str_bitrate_origin);
 					
-					socket_client.getOutputStream().write("300K/0.6".getBytes());
-					
+					socket_client.getOutputStream().write("200K/0.6".getBytes());
+
+					reader.close();
 					socket_client.close();
 					socket_server.close();
 				} catch (IOException e) {

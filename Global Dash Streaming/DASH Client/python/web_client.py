@@ -6,6 +6,8 @@ import os
 import sys
 import re
 
+PATTERN_BITRATE = re.compile("\d+K|\d+M")
+
 CONST_KB = 1024
 
 def readCSV():
@@ -86,20 +88,22 @@ class HandlerProxy(BaseHTTPRequestHandler):
 		self.end_headers()
 
 	def do_GET(self):
-		print(self.path)
 
 		if ".m4s" in self.path:
 
 			socket_control = socket()
 			socket_control.connect((dic_device["control"]["ip"], dic_device["control"]["port"]))
+
+			str_bitrate_origin = PATTERN_BITRATE.search(self.path).group()
+			socket_control.sendall((str_bitrate_origin + "\n").encode())
+			
 			list_data = socket_control.recv(CONST_KB).decode().split("/")
-			str_bitrate = list_data[0]
+			str_bitrate_adjusted = list_data[0]
 			str_ratio = list_data[1]
 			socket_control.close()
 
-			self.path = re.sub(r"\d+K|\d+M", str_bitrate, self.path)
-			query = self.path + "?x=" + str_ratio
-			print("Adjusted:", query)
+			query = self.path.replace(str_bitrate_origin, str_bitrate_adjusted) + "?x=" + str_ratio
+			print("query:", query)
 
 			byte_data = bytes(b"")
 			for i, element in enumerate(list_adaptor):
