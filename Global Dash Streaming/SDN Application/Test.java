@@ -53,13 +53,44 @@ public class Test {
 		Map<String, Integer> map_quantized = new HashMap<String, Integer>();
 		
 		ArrayList<Integer> array_upper = new ArrayList<Integer>();
+		ArrayList<Integer> array_lower = new ArrayList<Integer>();
+		
 		for (String ue: array_ue) {
 			if (map_rate.get(ue) <= ARRAY_BITRATE[0]) {
 				array_upper.add(0);
 				continue;
 			}
 			
+			for (int i = ARRAY_BITRATE.length - 1; i >= 0; i--) {
+				if (ARRAY_BITRATE[i] <= map_rate.get(ue)) {
+					array_upper.add(ARRAY_BITRATE.length - i - 1);
+					break;
+				}
+			}
+		}
+		
+		for (String ue: array_ue) {
+			if (map_rate.get(ue) <= ARRAY_BITRATE[0]) {
+				array_lower.add(0);
+				continue;
+			}
 			
+			for (int i = 0; i < ARRAY_BITRATE.length; i++) {
+				if (ARRAY_BITRATE[i] >= map_rate.get(ue)) {
+					array_lower.add(i);
+					break;
+				}
+			}
+		}
+		
+		for (String ue: array_ue) {
+			int idx_ue = array_ue.indexOf(ue);
+			int idx_rate;
+			if (Math.abs(array_upper.get(idx_ue) - map_rate.get(ue)) - Math.abs(array_lower.get(idx_ue) - map_rate.get(ue)) > 0)
+				idx_rate = array_lower.get(idx_ue);
+			else
+				idx_rate = array_upper.get(idx_ue);
+			map_rate.put(ue, ARRAY_BITRATE[idx_rate]);
 		}
 	}
 	
@@ -115,11 +146,14 @@ public class Test {
 				array_bandwidth.add((int)(sum_bandwidth));
 				int video = map_video.get(ue);
 				int rate = (int)(PARA_PSNR[video][0] / lam_mid);
+				/* 여기서 rate는 인덱스가 아님 */
 				map_rate.put(ue, rate);
 			}
 			
-			for (String ue: array_ue)
-				System.out.println(map_rate.get(ue));
+			/* 비트레이트 양자화 */
+			quantizeBitrate();
+			
+			
 			break;
 		}
 		
