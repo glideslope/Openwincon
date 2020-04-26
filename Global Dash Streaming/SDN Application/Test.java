@@ -1,4 +1,6 @@
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -31,6 +33,9 @@ public class Test {
 	
 	private static ArrayList<String> array_ue;
 	private static ArrayList<String> array_ap;
+	
+	/* <MAC 1, MAC 2> */
+	private static Map<String, String> map_mac;
 	
 	/* <UE name, UE class> */
 	private static Map<String, UE> map_ue;
@@ -149,6 +154,50 @@ public class Test {
 		return list_key;
 	}
 	
+	private static void readCSV() {
+		
+		File file = new File("list_allow.csv");
+        try {
+			BufferedReader reader = new BufferedReader(new FileReader(file));
+	        String str_line;
+	        String str_type;
+	        String str_mac;
+	        String str_group;
+	        
+	        Map map_group = new HashMap<String, String>(); 
+	        
+	        int int_row = 0;
+	        while ((str_line = reader.readLine()) != null) {
+	        	int_row ++;
+	        	
+	        	/* 첫줄은 읽지 않는다 */
+	        	if(int_row == 1)
+	        		continue;
+	        	
+	        	str_type = str_line.split(",")[0].trim();
+	        	str_mac = str_line.split(",")[1].replaceAll(":|-", "").trim().toLowerCase();
+	        	
+	        	if (str_type.toUpperCase().equals("AP"))
+	        		array_ap.add(str_mac);
+	        	else if (str_type.toUpperCase().equals("UE")) {
+	        		str_group = str_line.split(",")[2].trim();
+	        		
+	        		if(map_group.get(str_group) == null) {
+	        			array_ue.add(str_mac);
+	        			map_ue.put(str_mac, new UE());
+	        			map_mac.put(str_mac, str_mac);
+	        			map_group.put(str_group, str_mac);
+	        		}else {
+	        			map_mac.put(str_mac, (String) map_group.get(str_group));
+	        		}
+	        	}
+	        }
+	        reader.close();
+        }catch(Exception e) {
+        	e.printStackTrace();
+        }
+	}
+	
 	public static void main(String[] args) {
 		new ThreadRSSI().start();
 		new ThreadControl().start();
@@ -156,12 +205,16 @@ public class Test {
 		array_ue = new ArrayList<String>();
 		array_ap = new ArrayList<String>();
 		
+		map_mac = new HashMap<String, String>();
 		map_ue = new HashMap<String, UE>();
 		map_rate = new HashMap<String, Integer>();
 		map_timeslot = new HashMap<String, Double>();
 		map_video = new HashMap<String, Integer>();
 		
+		readCSV();
+		
 		/* Debug for 알고리즘 */
+		/*
 		for (int i = 1; i <= 3; i++) {
 			array_ue.add("UE" + i);
 			map_ue.put("UE" + i, new UE());
@@ -169,7 +222,6 @@ public class Test {
 		for (int j = 1; j <= 2; j++)
 			array_ap.add("AP" + j);
 		
-		/*
 		map_video.put("UE1", 2);
 		map_video.put("UE2", 0);
 		map_video.put("UE3", 1);
@@ -187,23 +239,6 @@ public class Test {
 		map_ue.get("UE3").setRSSI("AP2", -56);
 		map_ue.get("UE3").setRatio("AP2", MAX_X);
 		*/
-		
-		map_video.put("UE1", 0);
-		map_video.put("UE2", 1);
-		map_video.put("UE3", 0);
-		
-		map_ue.get("UE1").setRSSI("AP1", -75);
-		map_ue.get("UE1").setRatio("AP1", 0);
-		map_ue.get("UE1").setRSSI("AP2", -66);
-		map_ue.get("UE1").setRatio("AP2", MAX_X);
-		map_ue.get("UE2").setRSSI("AP1", -72);
-		map_ue.get("UE2").setRatio("AP1", 0);
-		map_ue.get("UE2").setRSSI("AP2", -60);
-		map_ue.get("UE2").setRatio("AP2", MAX_X);
-		map_ue.get("UE3").setRSSI("AP1", -71);
-		map_ue.get("UE3").setRatio("AP1", 0);
-		map_ue.get("UE3").setRSSI("AP2", -62);
-		map_ue.get("UE3").setRatio("AP2", MAX_X);
 		
 		/* 함수화 하기 */
 		String str_video = "[";
