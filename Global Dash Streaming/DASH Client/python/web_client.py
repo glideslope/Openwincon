@@ -95,7 +95,8 @@ class HandlerProxy(BaseHTTPRequestHandler):
 			socket_control.connect((dic_device["control"]["ip"], dic_device["control"]["port"]))
 
 			str_bitrate_origin = PATTERN_BITRATE.search(self.path).group()
-			socket_control.sendall((str_bitrate_origin + "\n").encode())
+			mac_ue = list_adaptor[0][0].replace("-", "").lower()
+			socket_control.sendall((str_bitrate_origin + "/" + mac_ue + "/" + "0" + "\n").encode())
 			
 			list_data = socket_control.recv(CONST_KB).decode().split("/")
 			str_bitrate_adjusted = list_data[0]
@@ -107,11 +108,11 @@ class HandlerProxy(BaseHTTPRequestHandler):
 
 			byte_data = bytes(b"")
 			for i, element in enumerate(list_adaptor):
-				mac_ap = element[0]
-				ip_ap = element[1]
+				mac_ue = element[0]
+				ip_ue = element[1]
 
 				socket_interface = socket()
-				socket_interface.bind((ip_ap, 0))
+				socket_interface.bind((ip_ue, 0))
 				socket_interface.connect((dic_device["server"]["ip"], dic_device["server"]["port"]))
 				# 쿼리는 처음 한번만
 				if i == 0:
@@ -122,7 +123,7 @@ class HandlerProxy(BaseHTTPRequestHandler):
 				socket_interface.sendall(bytes(b"ok"))
 
 				byte_data += socket_interface.recv(int(str_size))
-				print("%s: %s bytes" % (mac_ap, str_size))
+				print("%s: %s bytes" % (mac_ue, str_size))
 
 			self._set_headers(200)
 			self.wfile.write(byte_data)

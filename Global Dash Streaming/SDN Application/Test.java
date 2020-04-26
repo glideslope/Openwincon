@@ -117,6 +117,7 @@ public class Test {
 		for (String ap: array_ap) {
 			double sum_timeslot = 0;
 			for (String ue: array_ue) {
+
 				int x = map_ue.get(ue).getRatio(ap);
 				int rate = map_rate.get(ue);
 				int bandwidth = getBandwidth(map_ue.get(ue).getRSSI(ap));
@@ -588,7 +589,7 @@ public class Test {
 							int rssi = Integer.parseInt(array_client[1]);
 							
 							map_ue.get(str_ue).setRSSI(str_ap, rssi);
-							System.out.println(array_client[0] + " " + array_client[1]);
+							System.out.println(array_client[0] + "(" + str_ue + ") " + array_client[1]);
 						}
 						
 						/* 임시로 넣음 - RSSI 로그 */
@@ -626,8 +627,17 @@ public class Test {
 					Socket socket_client = socket_server.accept();
 
 					BufferedReader reader = new BufferedReader(new InputStreamReader(socket_client.getInputStream(), "UTF-8"));
-					String str_bitrate_origin = reader.readLine();
-					System.out.println(str_bitrate_origin);
+					String str_line = reader.readLine();
+					String str_bitrate_origin = str_line.split("/")[0].trim();
+					int len_bitrate_origin = str_bitrate_origin.length();
+					int int_rate_request = Integer.parseInt((String) str_bitrate_origin.subSequence(0, len_bitrate_origin - 1));
+					String str_ue = map_mac.get(str_line.split("/")[1].trim());
+					int int_video = Integer.parseInt(str_line.split("/")[2].trim());
+					System.out.println(str_bitrate_origin + " " + str_ue + " " + ARRAY_VIDEO[int_video]);
+					
+					map_rate.put(str_ue, int_rate_request);
+				
+					//int int_over = checkTimeslot();
 					
 					socket_client.getOutputStream().write("200K/0.6".getBytes());
 
