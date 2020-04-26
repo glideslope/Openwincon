@@ -1,3 +1,5 @@
-type, mac
-UE, xx:xx:xx:xx:xx:xx
-AP, xx:xx:xx:xx:xx:xx
+type, mac, group
+UE, xx:xx:xx:xx:xx:xx, 1
+UE, xx:xx:xx:xx:xx:xx, 1
+UE, xx:xx:xx:xx:xx:xx, 2
+AP, xx:xx:xx:xx:xx:xx,
