@@ -44,7 +44,7 @@ def getMac():
 	if str_mac == None:
 		print("Check your network interface")
 
-	return str_mac
+	return str_mac.replace(":", "")
 
 def makeMessage(str_mac_ap):
 	os.system("iw dev wlan0 station dump > temp")
@@ -61,7 +61,7 @@ def makeMessage(str_mac_ap):
 		idx_line += 1
 		text = list_lines[idx_line].strip()
 		if "Station" in text:
-			str_mac_client = text.split(" ")[1]
+			str_mac_client = text.split(" ")[1].replace(":", "")
 			
 		if "signal" in text:
 			str_rssi = text.split(" ")[2].strip()

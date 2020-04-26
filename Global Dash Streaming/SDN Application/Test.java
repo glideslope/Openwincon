@@ -573,23 +573,35 @@ public class Test {
 					String array_data[] = str_recv.split("/");
 					String str_ap = array_data[0];
 					
-					int len_data = array_data.length;
-					System.out.println("AP: " + str_ap);
-					for (int i = 1; i < len_data; i++) {
-						String array_client[] = array_data[i].split(",");
-						System.out.println(array_client[0] + " " + array_client[1]);
+					/* 허용된 AP일 경우만 데이터 받음 */
+					if (array_ap.indexOf(str_ap) >= 0) {
+
+						int len_data = array_data.length;
+						System.out.println("AP: " + str_ap);
+						for (int i = 1; i < len_data; i++) {
+							String array_client[] = array_data[i].split(",");
+							
+							String str_ue = map_mac.get(array_client[0]);
+							/* 허용된 UE가 아닐 경우 pass */
+							if (str_ue == null)
+								continue;
+							int rssi = Integer.parseInt(array_client[1]);
+							
+							map_ue.get(str_ue).setRSSI(str_ap, rssi);
+							System.out.println(array_client[0] + " " + array_client[1]);
+						}
+						
+						/* 임시로 넣음 - RSSI 로그 */
+						PrintWriter pw = null;
+				        try {
+				            pw = new PrintWriter(new FileWriter("test.txt", true));
+				            pw.write(str_recv + "\n");
+				            pw.close();
+				            
+				        }catch(Exception e) {
+				        	e.printStackTrace();
+				        }
 					}
-					
-					/* 임시로 넣음 - RSSI 로그 */
-					PrintWriter pw = null;
-			        try {
-			            pw = new PrintWriter(new FileWriter("test.txt", true));
-			            pw.write(str_recv + "\n");
-			            pw.close();
-			            
-			        }catch(Exception e) {
-			        	e.printStackTrace();
-			        }
 					
 					reader.close();
 					socket_client.close();
