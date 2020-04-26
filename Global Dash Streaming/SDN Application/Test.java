@@ -6,6 +6,8 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -13,12 +15,16 @@ public class Test {
 	final static int PORT_RSSI = 20000;
 	final static int PORT_CONTROL = 30000;
 	
+	final static double VAL_DURATION = 2.0;
+	final static double VAL_TIMESLOT = 2.0;
+	
 	final static double MAX_LAM = 1;
 	final static double MIN_LAM = 0;
 	
 	final static double ERROR_LAM = 0.00001;
 	
-	final static double DELTA_X = 0.005;
+	final static int MAX_X = 1000;
+	final static int DELTA_X = 5;
 	
 	final static int[] ARRAY_BITRATE = {50, 100, 150, 200, 250, 300, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000, 1050, 1100, 1150, 1200, 1250, 1300, 1350, 1400, 1450, 1500, 2000, 2500, 3000, 4000, 5000, 6000, 8000};
 	final static double[] PARA_PSNR[] = new double[][]{{5.5774, 1.72}, {5.6129, 2.1793}, {4.538, 11.865}};
@@ -32,11 +38,16 @@ public class Test {
 	/* <UE, rate> */
 	private static Map<String, Integer> map_rate;
 	
+	/* <AP, timeslot> */
+	private static Map<String, Double> map_timeslot;
+	
 	/* <UE, Video> 	  *
 	 * Bunny:		0 *
 	 * Elephant:	1 *
 	 * Sintel:		2 */
 	private static Map<String, Integer> map_video;
+	
+	final static String ARRAY_VIDEO[] = {"Big Buck Bunny", "Elephants Dream", "Sintel"};
 	
 	private static int getBandwidth(int rssi) {
 		int bandwidth = (int) (2460.672 * (1 - Math.exp(-0.11 * (rssi + 81.7))));
@@ -57,26 +68,12 @@ public class Test {
 		
 		for (String ue: array_ue) {
 			if (map_rate.get(ue) <= ARRAY_BITRATE[0]) {
-				array_upper.add(0);
+				array_lower.add(0);
 				continue;
 			}
 			
 			for (int i = ARRAY_BITRATE.length - 1; i >= 0; i--) {
 				if (ARRAY_BITRATE[i] <= map_rate.get(ue)) {
-					array_upper.add(ARRAY_BITRATE.length - i - 1);
-					break;
-				}
-			}
-		}
-		
-		for (String ue: array_ue) {
-			if (map_rate.get(ue) <= ARRAY_BITRATE[0]) {
-				array_lower.add(0);
-				continue;
-			}
-			
-			for (int i = 0; i < ARRAY_BITRATE.length; i++) {
-				if (ARRAY_BITRATE[i] >= map_rate.get(ue)) {
 					array_lower.add(i);
 					break;
 				}
@@ -84,14 +81,72 @@ public class Test {
 		}
 		
 		for (String ue: array_ue) {
-			int idx_ue = array_ue.indexOf(ue);
-			int idx_rate;
-			if (Math.abs(array_upper.get(idx_ue) - map_rate.get(ue)) - Math.abs(array_lower.get(idx_ue) - map_rate.get(ue)) > 0)
-				idx_rate = array_lower.get(idx_ue);
-			else
-				idx_rate = array_upper.get(idx_ue);
-			map_rate.put(ue, ARRAY_BITRATE[idx_rate]);
+			if (map_rate.get(ue) <= ARRAY_BITRATE[0]) {
+				array_upper.add(0);
+				continue;
+			}
+			
+			for (int i = 0; i < ARRAY_BITRATE.length; i++) {
+				if (ARRAY_BITRATE[i] >= map_rate.get(ue)) {
+					array_upper.add(i);
+					break;
+				}
+			}
 		}
+		
+		for (String ue: array_ue) {
+			int idx_ue = array_ue.indexOf(ue);
+			int rate_upper = ARRAY_BITRATE[array_upper.get(idx_ue)];
+			int rate_lower = ARRAY_BITRATE[array_lower.get(idx_ue)];
+			
+			if (Math.abs(rate_upper - map_rate.get(ue)) - Math.abs(rate_lower - map_rate.get(ue)) > 0)
+				map_rate.put(ue, rate_lower);
+			else
+				map_rate.put(ue, rate_upper);
+		}
+	}
+	
+	private static int checkTimeslot() {
+		int int_over = 0;
+		
+		for (String ap: array_ap) {
+			double sum_timeslot = 0;
+			for (String ue: array_ue) {
+				int x = map_ue.get(ue).getRatio(ap);
+				int rate = map_rate.get(ue);
+				int bandwidth = getBandwidth(map_ue.get(ue).getRSSI(ap));
+				double timeslot = (((double)x) / 1000) * rate * VAL_DURATION / bandwidth;
+				
+				sum_timeslot += timeslot;
+			}
+			
+			map_timeslot.put(ap, sum_timeslot);
+			if (sum_timeslot > VAL_TIMESLOT)
+				int_over ++;
+		}
+		
+		return int_over;
+	}
+	
+	public static ArrayList<String> sortValue(Map map){
+		ArrayList<String> list_key = new ArrayList<String>();
+		list_key.addAll(map.keySet());
+		
+		Collections.sort(list_key, new Comparator() {
+
+			@Override
+			public int compare(Object arg0, Object arg1) {
+				// TODO Auto-generated method stub
+				
+				Object value0 = map.get(arg0);
+				Object value1 = map.get(arg1);
+				
+				return ((Comparable) value1).compareTo(value0);
+			}
+		});
+		
+		Collections.reverse(list_key);
+		return list_key;
 	}
 	
 	public static void main(String[] args) {
@@ -103,6 +158,7 @@ public class Test {
 		
 		map_ue = new HashMap<String, UE>();
 		map_rate = new HashMap<String, Integer>();
+		map_timeslot = new HashMap<String, Double>();
 		map_video = new HashMap<String, Integer>();
 		
 		/* Debug for 알고리즘 */
@@ -113,35 +169,103 @@ public class Test {
 		for (int j = 1; j <= 2; j++)
 			array_ap.add("AP" + j);
 		
+		/*
 		map_video.put("UE1", 2);
 		map_video.put("UE2", 0);
 		map_video.put("UE3", 1);
 		
 		map_ue.get("UE1").setRSSI("AP1", -72);
-		map_ue.get("UE1").setRatio("AP1", 1);
+		map_ue.get("UE1").setRatio("AP1", MAX_X);
 		map_ue.get("UE1").setRSSI("AP2", -79);
 		map_ue.get("UE1").setRatio("AP2", 0);
 		map_ue.get("UE2").setRSSI("AP1", -67);
 		map_ue.get("UE2").setRatio("AP1", 0);
 		map_ue.get("UE2").setRSSI("AP2", -60);
-		map_ue.get("UE2").setRatio("AP2", 1);
+		map_ue.get("UE2").setRatio("AP2", MAX_X);
 		map_ue.get("UE3").setRSSI("AP1", -62);
 		map_ue.get("UE3").setRatio("AP1", 0);
 		map_ue.get("UE3").setRSSI("AP2", -56);
-		map_ue.get("UE3").setRatio("AP2", 1);
-
+		map_ue.get("UE3").setRatio("AP2", MAX_X);
+		*/
+		
+		map_video.put("UE1", 0);
+		map_video.put("UE2", 1);
+		map_video.put("UE3", 0);
+		
+		map_ue.get("UE1").setRSSI("AP1", -75);
+		map_ue.get("UE1").setRatio("AP1", 0);
+		map_ue.get("UE1").setRSSI("AP2", -66);
+		map_ue.get("UE1").setRatio("AP2", MAX_X);
+		map_ue.get("UE2").setRSSI("AP1", -72);
+		map_ue.get("UE2").setRatio("AP1", 0);
+		map_ue.get("UE2").setRSSI("AP2", -60);
+		map_ue.get("UE2").setRatio("AP2", MAX_X);
+		map_ue.get("UE3").setRSSI("AP1", -71);
+		map_ue.get("UE3").setRatio("AP1", 0);
+		map_ue.get("UE3").setRSSI("AP2", -62);
+		map_ue.get("UE3").setRatio("AP2", MAX_X);
+		
 		/* 함수화 하기 */
+		String str_video = "[";
+		String str_ratio = "[";
+		String str_rssi = "[";
+		String str_bandwidth = "[";
+		for (String ue: array_ue) {
+			
+			int video = map_video.get(ue);
+			
+			str_video += ARRAY_VIDEO[video] + ", ";
+			
+			str_ratio += "[";
+			str_rssi += "[";
+			str_bandwidth += "[";
+			
+			for (String ap: array_ap) {
+				int x = map_ue.get(ue).getRatio(ap);
+				int rssi = map_ue.get(ue).getRSSI(ap);
+				int bandwidth = getBandwidth(rssi);
+				
+				str_ratio += String.format("%.3f, ", ((double)x) / 1000);
+				str_rssi += rssi + ", ";
+				str_bandwidth += bandwidth + ", ";
+			}
+			
+			str_ratio = str_ratio.subSequence(0, str_ratio.length() - 2) +"], ";
+			str_rssi = str_rssi.subSequence(0, str_rssi.length() - 2) + "], ";
+			str_bandwidth = str_bandwidth.subSequence(0, str_bandwidth.length() - 2) + "], ";
+		}
+		str_video = str_video.subSequence(0, str_video.length() - 2) + "]";
+		str_ratio = str_ratio.subSequence(0, str_ratio.length() - 2) + "]";
+		str_rssi = str_rssi.subSequence(0, str_rssi.length() - 2) + "] dB";
+		str_bandwidth = str_bandwidth.subSequence(0, str_bandwidth.length() - 2) + "] kbps";
+		System.out.println("Video:\t\t" + str_video);
+		System.out.println("Chunk ratio:\t" + str_ratio);
+		System.out.println("RSSI:\t\t" + str_rssi);
+		System.out.println("Bandwidth:\t" + str_bandwidth);
+		System.out.println();
+		
+		int int_iter = 0;
+		int int_over;
 		double lam_pre = MAX_LAM;
+		double lam_max = MAX_LAM;
+		double lam_min = MIN_LAM;
 		double lam_mid = (MAX_LAM + MIN_LAM) / 2;
+		
 		double max_psnr = 0;
+		Map<String, Integer> max_rate = new HashMap<String, Integer>();
+		
+		String max_ap, min_ap;
+		/* 반복 시작 */
 		while(true) {
+			int_iter ++;
+			
 			ArrayList<Integer> array_bandwidth = new ArrayList<Integer>();
 			double sum_bandwidth = 0;
 			for (String ue: array_ue) {
 				for (String ap: array_ap) {
-					double x = map_ue.get(ue).getRatio(ap);
+					int x = map_ue.get(ue).getRatio(ap);
 					double bandwidth = getBandwidth(map_ue.get(ue).getRSSI(ap));
-					sum_bandwidth += x * bandwidth;
+					sum_bandwidth += (((double)x) / 1000) * bandwidth;
 				}
 				array_bandwidth.add((int)(sum_bandwidth));
 				int video = map_video.get(ue);
@@ -153,11 +277,218 @@ public class Test {
 			/* 비트레이트 양자화 */
 			quantizeBitrate();
 			
+			/* 타임슬롯 체크 */
+			int_over = checkTimeslot();
+			if (int_over == 0) {
+				double sum_psnr = 0;
+				for (String ue: array_ue) {
+					int video = map_video.get(ue);
+					int rate = map_rate.get(ue);
+					
+					sum_psnr += getPSNR(rate, video);
+				}
+				
+				if(sum_psnr > max_psnr) {
+					max_psnr = sum_psnr;
+					for (String ue: array_ue) {
+						int rate = map_rate.get(ue);
+						
+						max_rate.put(ue, rate);
+					}
+				}
+				
+				if (Math.abs(lam_mid - lam_pre) < ERROR_LAM)
+					break;
+				else {
+					lam_pre = lam_mid;
+					lam_max = lam_mid;
+					lam_mid = (lam_min + lam_max) / 2;
+					continue;
+				}
+				
+			}else if(int_over == 2) {
+				lam_pre = lam_mid;
+				lam_min = lam_mid;
+				lam_mid = (lam_min + lam_max) / 2;
+				continue;
+			}
+
+			/* int_over == 1 */
 			
-			break;
+			/* 타임슬롯 많이 차지하는 AP 찾기 */
+			if (map_timeslot.get(array_ap.get(0)) < map_timeslot.get(array_ap.get(1))){
+				max_ap = array_ap.get(1);
+				min_ap = array_ap.get(0);
+			}else {
+				max_ap = array_ap.get(0);
+				min_ap = array_ap.get(1);
+			}
+
+			/* 대역폭 비율 고려 */
+			Map<String, Double> map_diff = new HashMap<String, Double>();
+			for (String ue: array_ue) {
+				int max_rssi = map_ue.get(ue).getRSSI(max_ap);
+				int min_rssi = map_ue.get(ue).getRSSI(min_ap);
+				double max_bandwidth = getBandwidth(max_rssi);
+				double min_bandwidth = getBandwidth(min_rssi);
+				
+				map_diff.put(ue, Math.abs((max_bandwidth / min_bandwidth - 1)));
+			}
+			
+			ArrayList<String> array_sorted = sortValue(map_diff);
+			
+			/* x 값 백업 */
+			Map<String, UE> map_copy = new HashMap<String, UE>();
+			for (String ue: array_ue) {
+				map_copy.put(ue, new UE());
+				for (String ap: array_ap) {
+					int x = map_ue.get(ue).getRatio(ap);
+					
+					map_copy.get(ue).setRatio(ap, x);
+				}
+			}
+			
+			/* 타임슬롯 줄일 수 있는 UE 조사 */
+			ArrayList<String> array_possible = new ArrayList<String>();
+			for (String ue: array_sorted) {
+				if (map_copy.get(ue).getRatio(max_ap) == 0)
+					continue;
+				array_possible.add(ue);
+			}
+			
+			/* 타임슬롯 줄이기 */
+			boolean is_end = false;
+			for (String ue: array_possible) {
+				if (is_end)
+					break;
+				while(true) {
+					int x = map_ue.get(ue).getRatio(max_ap);
+					/* 더 이상 줄일 수 없는 경우 */
+					if (x == 0)
+						break;
+					
+					x -= DELTA_X;
+					map_ue.get(ue).setRatio(max_ap, x);
+					map_ue.get(ue).setRatio(min_ap, MAX_X - x);
+					
+					/* 바뀐 타임슬롯 체크 */
+					int_over = checkTimeslot();
+					
+					/* 만약 타임슬롯 상태가 바뀐 경우 */
+					if (int_over == 0) {
+						is_end = true;
+						break;
+					}
+					
+					double sum_timeslot = 0;
+					for (String ap: array_ap) {
+						double timeslot = map_timeslot.get(ap);
+						
+						sum_timeslot += timeslot;
+					}
+						
+					/* 어떻게 조절하든 타임슬롯이 모두 넘칠 경우 */
+					if (sum_timeslot > array_ap.size() * VAL_TIMESLOT) {
+						is_end = true;
+						x += DELTA_X;
+						
+						map_ue.get(ue).setRatio(max_ap, x);
+						map_ue.get(ue).setRatio(min_ap, MAX_X - x);
+						break;
+					}
+				}
+			}
+			
+			if (int_over == 0) {
+				int_iter ++;
+			
+				double sum_psnr = 0;
+				for (String ue: array_ue) {
+					int video = map_video.get(ue);
+					int rate = map_rate.get(ue);
+					
+					sum_psnr += getPSNR(rate, video);
+				}
+				
+				if(sum_psnr > max_psnr) {
+					max_psnr = sum_psnr;
+					for (String ue: array_ue) {
+						int rate = map_rate.get(ue);
+						
+						max_rate.put(ue, rate);
+					}
+				}
+				
+				if (Math.abs(lam_mid - lam_pre) < ERROR_LAM)
+					break;
+				else {
+					lam_pre = lam_mid;
+					lam_max = lam_mid;
+					lam_mid = (lam_min + lam_max) / 2;
+					continue;
+				}
+			}else {
+				/* x 값 복구 */
+				for (String ue: array_ue) {
+					for (String ap: array_ap) {
+						int x = map_copy.get(ue).getRatio(ap);
+						
+						map_ue.get(ue).setRatio(ap, x);
+					}
+				}
+				
+				lam_pre = lam_mid;
+				lam_min = lam_mid;
+				lam_mid = (lam_min + lam_max) / 2;
+				continue;
+			}
+			
 		}
 		
-		System.out.println(getPSNR(1000, 1));
+		System.out.println("Iteration:\t" + int_iter);
+		System.out.println("Lambda:\t\t" + lam_mid);
+		String str_rate = "[";
+		String str_psnr = "[";
+		str_ratio = "[";
+		String str_merged = "[";
+		for (String ue: array_ue) {
+			int video = map_video.get(ue);
+			int rate = map_rate.get(ue);
+			double psnr = getPSNR(rate, video);
+			double sum_bandwidth = 0;
+
+			str_rate += (rate + ", ");
+			str_psnr += String.format("%.2f, ", psnr);
+			str_ratio += "[";
+			
+			for (String ap: array_ap) {
+				int x = map_ue.get(ue).getRatio(ap);
+				int rssi = map_ue.get(ue).getRSSI(ap);
+				
+				sum_bandwidth += (((double)x) / 1000) * getBandwidth(rssi);
+				str_ratio += String.format("%.3f, ", ((double)x) / 1000);
+			}
+			
+			str_ratio = str_ratio.subSequence(0, str_ratio.length() - 2) +"], ";
+			str_merged += (int)(sum_bandwidth) + ", ";
+		}
+		str_rate = str_rate.subSequence(0, str_rate.length() - 2) + "] kbps";
+		str_psnr = str_psnr.subSequence(0, str_psnr.length() - 2) + "] dB";
+		str_ratio = str_ratio.subSequence(0, str_ratio.length() - 2) + "]";
+		str_merged = str_merged.subSequence(0, str_merged.length() - 2) + "] kbps";
+		System.out.println("Bitrate:\t" + str_rate);
+		System.out.println("PSNR:\t\t" + str_psnr);
+		System.out.println("Chunk ratio:\t" + str_ratio);
+		System.out.println("Merged BW:\t" + str_merged);
+		String str_timeslot = "[";
+		for (String ap: array_ap) {
+			double timeslot = map_timeslot.get(ap);
+			
+			str_timeslot += String.format("%.3f, ", timeslot);
+		}
+		str_timeslot = str_timeslot.subSequence(0, str_timeslot.length() - 2) + "]";
+		System.out.println("Timeslot:\t" + str_timeslot);
+		
 	}
 	
 	public static class UE{
@@ -166,11 +497,11 @@ public class Test {
 		private Map<String, Integer> map_rssi;
 		
 		/* <AP, x ratio> */
-		private Map<String, Double> map_ratio;
+		private Map<String, Integer> map_ratio;
 		
 		public UE() {
 			map_rssi = new HashMap<String, Integer>();
-			map_ratio = new HashMap<String, Double>();
+			map_ratio = new HashMap<String, Integer>();
 		}
 		
 		public int getRSSI(String ap) {
@@ -181,11 +512,11 @@ public class Test {
 			map_rssi.put(ap, rssi);
 		}
 		
-		public double getRatio(String ap) {
+		public int getRatio(String ap) {
 			return map_ratio.get(ap);
 		}
 		
-		public void setRatio(String ap, double ratio) {
+		public void setRatio(String ap, int ratio) {
 			map_ratio.put(ap, ratio);
 		}
 	}
@@ -236,7 +567,6 @@ public class Test {
 		}
 	}
 	
-
 	public static class ThreadControl extends Thread{
 
 		@Override
