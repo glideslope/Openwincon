@@ -199,6 +199,34 @@ public class Test {
         }
 	}
 	
+	private static void writeRSSILog() {
+		while(true) {
+			PrintWriter pw = null;
+	        try {
+	            Thread.sleep(2000);
+	            
+	            pw = new PrintWriter(new FileWriter("test.txt", true));
+	            String str_log = "";
+            	for (String ap: array_ap) {
+            		str_log += (ap + ":");
+            		for (String ue: array_ue) {
+	            		int rssi = map_ue.get(ue).getRSSI(ap);
+	            		
+	            		str_log += (map_mac.get(ue) + ":" + rssi + ", ");
+	            		System.out.println(ap + " " + map_mac.get(ue) + " " + rssi);
+	            	}
+	            	str_log = (str_log.subSequence(0, str_log.length() - 2) + "/");
+	            }
+	            str_log = (str_log.subSequence(0, str_log.length() - 1) + "\n");
+	            pw.write(str_log);
+	            pw.close();
+	            
+	        }catch(Exception e) {
+	        	e.printStackTrace();
+	        }
+		}
+	}
+	
 	public static void main(String[] args) {
 		new ThreadRSSI().start();
 		new ThreadControl().start();
@@ -591,17 +619,6 @@ public class Test {
 							map_ue.get(str_ue).setRSSI(str_ap, rssi);
 							System.out.println(array_client[0] + "(" + str_ue + ") " + array_client[1]);
 						}
-						
-						/* 임시로 넣음 - RSSI 로그 */
-						PrintWriter pw = null;
-				        try {
-				            pw = new PrintWriter(new FileWriter("test.txt", true));
-				            pw.write(str_recv + "\n");
-				            pw.close();
-				            
-				        }catch(Exception e) {
-				        	e.printStackTrace();
-				        }
 					}
 					
 					reader.close();
@@ -639,7 +656,7 @@ public class Test {
 				
 					//int int_over = checkTimeslot();
 					
-					socket_client.getOutputStream().write("200K/0.6".getBytes());
+					socket_client.getOutputStream().write("2000K/0.6".getBytes());
 
 					reader.close();
 					socket_client.close();
