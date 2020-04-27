@@ -66,7 +66,7 @@ ffmpeg -i bunny.y4m -c:v libx264 -preset ultrafast -qp 0 -pix_fmt yuv420p -movfl
 ffmpeg -i <mp4 파일> -b:v <비트레이트> <해당 비트레이트로 인코딩된 mp4파일>
 
 ex)
-ffmpeg -i bunny -b:v 200K bunny_200K.mp4
+ffmpeg -i bunny.mp4 -b:v 200K bunny_200K.mp4
 ```
 
 <br>
