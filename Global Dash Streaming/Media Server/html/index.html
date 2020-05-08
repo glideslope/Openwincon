@@ -4,8 +4,26 @@
 <script src="js/video.js"></script>
 <script src="js/dash.all.debug.js"></script>
 <script src="js/videojs-dash.js"></script>
+
 <script>
-	var player = videojs('example-video');
-	player.src({ src: 'dash.mpd', type: 'application/dash+xml'});
-	player.play();
+	document.getElementById("example-video").style.display = "none";
+	
+	function changeVideo(){
+		document.getElementById("example-video").style.display = "block";
+
+		var select_video = document.getElementById("video");
+		var value_video = select_video.options[select_video.selectedIndex].value;
+ 
+		var player = videojs("example-video");
+		player.src({ src: value_video + "/dash.mpd", type: "application/dash+xml"});
+		player.play();
+	}
 </script>
+
+
+<select id = "video" onchange = "changeVideo()">
+	<option value = "">Select the video</option>
+	<option value = "bunny">Big Buck Bunny</option>
+	<option value = "elephant">Elephants Dream</option>
+	<option value = "sintel">Sintel</option>
+</select>
