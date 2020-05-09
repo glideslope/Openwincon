@@ -14,20 +14,13 @@
  - Big Buck Bunny
  - Elephants Dream
  - Sintel
-<br>
-인코딩 bitrate
+  <br>
+  인코딩 bitrate
 
 - [50, 100, 150, 200, 250, 300, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000, 1050, 1100, 1150, 1200, 1250, 1300, 1350, 1400, 1450, 1500, 1550, 1600, 1650, 1700, 1750, 1800, 1850, 1900, 1950, 2000, 2500, 3000, 4000, 5000, 6000, 8000] kbps
-<br>
-PSNR 수식 (Excel 사용)
+  <br>
 
- - Big Buck Bunny
-    - ![404 Not Found](_image/formula_psnr_bunny.png?raw=true)
- - Elephants Dream
-    - ![404 Not Found](_image/formula_psnr_elephant.png?raw=true)
- - Sintel
-    - ![404 Not Found](_image/formula_psnr_sintel.png?raw=true)
-   
+
 <br>
 
 Bandwidth 모델
