@@ -54,6 +54,8 @@ public class Test {
 	
 	final static String ARRAY_VIDEO[] = {"Big Buck Bunny", "Elephants Dream", "Sintel"};
 	
+	final static SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("[yyyy-MM-dd HH:mm:ss]");
+	
 	private static int getBandwidth(int rssi) {
 		int bandwidth = (int) (2460.672 * (1 - Math.exp(-0.11 * (rssi + 81.7))));
 		if (bandwidth <= 0)
@@ -165,7 +167,7 @@ public class Test {
 	        String str_mac;
 	        String str_group;
 	        
-	        Map map_group = new HashMap<String, String>(); 
+	        Map<String, String> map_group = new HashMap<String, String>(); 
 	        
 	        int int_row = 0;
 	        while ((str_line = reader.readLine()) != null) {
@@ -645,12 +647,21 @@ public class Test {
 
 					BufferedReader reader = new BufferedReader(new InputStreamReader(socket_client.getInputStream(), "UTF-8"));
 					String str_line = reader.readLine();
+					
+					Date time = new Date();
+					String str_time = TIME_FORMAT.format(time);
+					
 					String str_bitrate_origin = str_line.split("/")[0].trim();
 					int len_bitrate_origin = str_bitrate_origin.length();
 					int int_rate_request = Integer.parseInt((String) str_bitrate_origin.subSequence(0, len_bitrate_origin - 1));
+				
 					String str_ue = map_mac.get(str_line.split("/")[1].trim());
-					int int_video = Integer.parseInt(str_line.split("/")[2].trim());
-					System.out.println(str_bitrate_origin + " " + str_ue + " " + ARRAY_VIDEO[int_video]);
+					
+					String str_video = str_line.split("/")[2].trim();
+					
+					int int_segment = Integer.parseInt(str_line.split("/")[3].trim());
+					
+					System.out.println(str_time + " " + str_ue + " " + str_bitrate_origin + " " + str_video + " " + int_segment);
 					
 					map_rate.put(str_ue, int_rate_request);
 				
