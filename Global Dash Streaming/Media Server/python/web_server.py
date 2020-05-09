@@ -67,8 +67,9 @@ def divideChunk(port):
 			if i == 0: 
 				print("connected...")
 				raw = con.recv(CONST_KB).decode("utf-8")
+				type = raw.split("/")[3]
 				query = raw.split("/")[-1]
-				object = "../media/" + query.split("?")[0]
+				object = "../media/" + type + "/" + query.split("?")[0]
 				file = open(object, "rb")
 				byte_data = file.read()
 

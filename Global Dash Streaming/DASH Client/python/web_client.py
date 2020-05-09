@@ -10,6 +10,11 @@ PATTERN_BITRATE = re.compile("\d+K|\d+M")
 
 CONST_KB = 1024
 
+"""
+원래는 csv 입력으로 받아야함
+"""
+dic_video = {"bunny": 0, "elephant": 1, "sintel": 2}
+
 def readCSV():
 	dic_device = {}
 	try:
@@ -96,7 +101,8 @@ class HandlerProxy(BaseHTTPRequestHandler):
 
 			str_bitrate_origin = PATTERN_BITRATE.search(self.path).group()
 			mac_ue = list_adaptor[0][0].replace("-", "").lower()
-			socket_control.sendall((str_bitrate_origin + "/" + mac_ue + "/" + "0" + "\n").encode())
+			str_type = self.path.split("/")[3]
+			socket_control.sendall((str_bitrate_origin + "/" + mac_ue + "/" + str(dic_video[str_type]) + "\n").encode())
 			
 			list_data = socket_control.recv(CONST_KB).decode().split("/")
 			str_bitrate_adjusted = list_data[0]
