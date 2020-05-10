@@ -1,6 +1,5 @@
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -55,8 +54,13 @@ public class Test {
 	/* <UE, video> 	  */
 	private static Map<String, String> map_video;
 	
+	/* <UE, segment> */
+	private static Map<String, Integer> map_segment;
+	
 	/* <video + rate, PSNR> */
 	private static Map<String, ArrayList<Double>> map_psnr;
+	
+	private static Map<String, ArrayList<Double[]>> map_para;
 	
 	final static SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("[yyyy-MM-dd HH:mm:ss]");
 	
@@ -67,9 +71,12 @@ public class Test {
 		return bandwidth;
 	}
 	
-	private static double getPSNR(int bitrate) {
-		//return PARA_PSNR[video][0] * Math.log(bitrate) + PARA_PSNR[video][1];
-		return 5.5774 * Math.log(bitrate) + 1.72; // 임시
+	private static double getPSNR(String ue, int bitrate) {
+		String str_video = map_video.get(ue);
+		int int_segment = map_segment.get(ue);
+		
+		Double double_para[] = map_para.get(str_video).get(int_segment - 1);
+		return double_para[0] * Math.log(bitrate) + double_para[1];
 	}
 	
 	private static void calculateBitrate(double lam) {
@@ -82,8 +89,11 @@ public class Test {
 				sum_bandwidth += (((double)x) / 1000) * bandwidth;
 			}
 			array_bandwidth.add((int)(sum_bandwidth));
-			//int video = map_video.get(ue);
-			int rate = (int)(5.5774 / lam); // 임시
+			String str_video = map_video.get(ue);
+			int int_segment = map_segment.get(ue);
+			double double_para = map_para.get(str_video).get(int_segment - 1)[0];
+			int rate = (int)(double_para / lam);
+			
 			/* 여기서 rate는 인덱스가 아님 */
 			map_rate.put(ue, rate);
 		}
@@ -136,10 +146,9 @@ public class Test {
 	private static double calculateSumPSNR() {
 		double sum_psnr = 0;
 		for (String ue: array_ue) {
-			//int video = map_video.get(ue);
 			int rate = map_rate.get(ue);
 				
-			sum_psnr += getPSNR(rate);
+			sum_psnr += getPSNR(ue, rate);
 		}
 		
 		return sum_psnr;
@@ -342,7 +351,7 @@ public class Test {
 			System.exit(1);
         }
         
-        File file_folder = new File("./csv/");
+        File file_folder = new File("./csv/psnr");
         File[] array_file = file_folder.listFiles();
         String[] array_element;
         String str_video, str_bitrate;
@@ -366,6 +375,39 @@ public class Test {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+        
+        file_folder = new File("./csv/para");
+        array_file = file_folder.listFiles();
+        double double_para[] = new double[2];
+        	
+        try {
+	        for (int i = 0; i < array_file.length; i++) {
+	        	array_element = array_file[i].toString().split("_");
+	        	str_video = array_element[1].replace(".csv", "");
+	        	
+	        	ArrayList<Double[]> array_para = new ArrayList<Double[]>();
+	        	
+	        	BufferedReader reader = new BufferedReader(new FileReader(array_file[i]));
+		        String str_line;
+		        
+				while ((str_line = reader.readLine()) != null) {
+					double_para[0] = Double.parseDouble(str_line.split(",")[1].trim());
+					double_para[1] = Double.parseDouble(str_line.split(",")[2].trim());
+					array_para.add(new Double[]{double_para[0], double_para[1]});
+				}
+				map_para.put(str_video, array_para);
+	        }
+        } catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	private static void giveDefaultValue() {
+		for (String ue: array_ue) {
+			map_video.put(ue, "sintel");
+			map_segment.put(ue, 1);
+		}
 	}
 	
 	private static void writeLogAlgorithmPreparation() {
@@ -378,13 +420,13 @@ public class Test {
 			return ;
 		}
     	
-		//String str_video = "[";
+		String str_video = "[";
 		String str_ratio = "[";
 		String str_rssi = "[";
 		String str_bandwidth = "[";
 		for (String ue: array_ue) {
 				
-			//str_video += ARRAY_VIDEO[video] + ", ";
+			str_video += map_video.get(ue) + ", ";
 			str_ratio += "[";
 			str_rssi += "[";
 			str_bandwidth += "[";
@@ -403,7 +445,7 @@ public class Test {
 			str_rssi = str_rssi.subSequence(0, str_rssi.length() - 2) + "], ";
 			str_bandwidth = str_bandwidth.subSequence(0, str_bandwidth.length() - 2) + "], ";
 		}
-		//str_video = str_video.subSequence(0, str_video.length() - 2) + "]";
+		str_video = str_video.subSequence(0, str_video.length() - 2) + "]";
 		str_ratio = str_ratio.subSequence(0, str_ratio.length() - 2) + "]";
 		str_rssi = str_rssi.subSequence(0, str_rssi.length() - 2) + "] dB";
 		str_bandwidth = str_bandwidth.subSequence(0, str_bandwidth.length() - 2) + "] kbps";
@@ -411,7 +453,7 @@ public class Test {
 		Date time = new Date();
 		String str_time = TIME_FORMAT.format(time);
 		pw.write(str_time + "\n");
-		//pw.write("Video:\t\t" + str_video + "\n");
+		pw.write("Video:\t\t" + str_video + "\n");
 		pw.write("Chunk ratio:\t" + str_ratio + "\n");
 		pw.write("RSSI:\t\t" + str_rssi + "\n");
 		pw.write("Bandwidth:\t" + str_bandwidth + "\n");
@@ -440,9 +482,8 @@ public class Test {
 			String str_ratio = "[";
 			String str_merged = "[";
 			for (String ue: array_ue) {
-				//int video = map_video.get(ue);
 				int rate = map_rate.get(ue);
-				double psnr = getPSNR(rate);
+				double psnr = getPSNR(ue, rate);
 				double sum_bandwidth = 0;
 
 				str_rate += (rate + ", ");
@@ -495,7 +536,9 @@ public class Test {
 		Date time = new Date();
 		String str_time = TIME_FORMAT.format(time);
 		pw.write(str_time + "\n");
-		double double_psnr = 0;
+		int int_segment = map_segment.get(ue);
+		String str_video = map_video.get(ue);
+		double double_psnr = map_psnr.get(str_video).get(int_segment - 1);
 		int int_rate_adjusted = map_rate.get(ue);
 		double double_x = map_ue.get(ue).getRatio(array_ap.get(0)) / 1000.0;
 		pw.write(ue + "/" + rate_origin + "->" + int_rate_adjusted + "/" + double_x + "/" + segment + "/" + double_psnr + "\n");
@@ -552,8 +595,13 @@ public class Test {
 		map_timeslot = new HashMap<String, Double>();
 		map_video = new HashMap<String, String>();
 		map_psnr = new HashMap<String, ArrayList<Double>>();
+		map_para = new HashMap<String, ArrayList<Double[]>>();
+		map_segment = new HashMap<String, Integer>();
 		
 		readCSV();
+		
+		/* 클라이언트와 통신 전 기본 값 적용 */
+		giveDefaultValue();
 		
 		while (true) {
 			 try {
@@ -776,6 +824,7 @@ public class Test {
 					map_video.put(str_ue, str_video);
 					
 					int int_segment = Integer.parseInt(str_line.split("/")[3].trim());
+					map_segment.put(str_ue, int_segment);
 					
 					System.out.println(str_time + " " + str_ue + " " + str_bitrate_origin + " " + str_video + " " + int_segment);
 				
