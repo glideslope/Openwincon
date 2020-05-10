@@ -198,6 +198,178 @@ public class Test {
         }
 	}
 	
+	private static void writeLogAlgorithmPreparation() {
+		PrintWriter pw = null;
+		try {
+			pw = new PrintWriter(new FileWriter("log_algorithm.log", true));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return ;
+		}
+    	
+		//String str_video = "[";
+		String str_ratio = "[";
+		String str_rssi = "[";
+		String str_bandwidth = "[";
+		for (String ue: array_ue) {
+				
+			//str_video += ARRAY_VIDEO[video] + ", ";
+			str_ratio += "[";
+			str_rssi += "[";
+			str_bandwidth += "[";
+				
+			for (String ap: array_ap) {
+				int x = map_ue.get(ue).getRatio(ap);
+				int rssi = map_ue.get(ue).getRSSI(ap);
+				int bandwidth = getBandwidth(rssi);
+					
+				str_ratio += String.format("%.3f, ", ((double)x) / 1000);
+				str_rssi += rssi + ", ";
+				str_bandwidth += bandwidth + ", ";
+			}
+				
+			str_ratio = str_ratio.subSequence(0, str_ratio.length() - 2) +"], ";
+			str_rssi = str_rssi.subSequence(0, str_rssi.length() - 2) + "], ";
+			str_bandwidth = str_bandwidth.subSequence(0, str_bandwidth.length() - 2) + "], ";
+		}
+		//str_video = str_video.subSequence(0, str_video.length() - 2) + "]";
+		str_ratio = str_ratio.subSequence(0, str_ratio.length() - 2) + "]";
+		str_rssi = str_rssi.subSequence(0, str_rssi.length() - 2) + "] dB";
+		str_bandwidth = str_bandwidth.subSequence(0, str_bandwidth.length() - 2) + "] kbps";
+		
+		Date time = new Date();
+		String str_time = TIME_FORMAT.format(time);
+		pw.write(str_time + "\n");
+		//pw.write("Video:\t\t" + str_video + "\n");
+		pw.write("Chunk ratio:\t" + str_ratio + "\n");
+		pw.write("RSSI:\t\t" + str_rssi + "\n");
+		pw.write("Bandwidth:\t" + str_bandwidth + "\n");
+		pw.write("\n");
+		pw.close();
+	}
+	
+	private static void writeLogAlgorithmResult(int iter, double lam) {
+		PrintWriter pw = null;
+		try {
+			pw = new PrintWriter(new FileWriter("log_algorithm.log", true));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			return;
+		}
+		 
+		if (pw != null) {		
+			Date time = new Date();
+			String str_time = TIME_FORMAT.format(time);
+			pw.write(str_time + "\n");
+			pw.write("Iteration:\t" + iter + "\n");
+			pw.write("Lambda:\t\t" + lam + "\n");
+
+			String str_rate = "[";
+			String str_psnr = "[";
+			String str_ratio = "[";
+			String str_merged = "[";
+			for (String ue: array_ue) {
+				//int video = map_video.get(ue);
+				int rate = map_rate.get(ue);
+				double psnr = getPSNR(rate);
+				double sum_bandwidth = 0;
+
+				str_rate += (rate + ", ");
+				str_psnr += String.format("%.2f, ", psnr);
+				str_ratio += "[";
+				
+				for (String ap: array_ap) {
+					int x = map_ue.get(ue).getRatio(ap);
+					int rssi = map_ue.get(ue).getRSSI(ap);
+					
+					sum_bandwidth += (((double)x) / 1000) * getBandwidth(rssi);
+					str_ratio += String.format("%.3f, ", ((double)x) / 1000);
+				}
+				
+				str_ratio = str_ratio.subSequence(0, str_ratio.length() - 2) +"], ";
+				str_merged += (int)(sum_bandwidth) + ", ";
+			}
+			str_rate = str_rate.subSequence(0, str_rate.length() - 2) + "] kbps";
+			str_psnr = str_psnr.subSequence(0, str_psnr.length() - 2) + "] dB";
+			str_ratio = str_ratio.subSequence(0, str_ratio.length() - 2) + "]";
+			str_merged = str_merged.subSequence(0, str_merged.length() - 2) + "] kbps";
+			pw.write("Bitrate:\t\t" + str_rate + "\n");
+			pw.write("PSNR:\t\t" + str_psnr + "\n");
+			pw.write("Chunk ratio:\t" + str_ratio + "\n");
+			pw.write("Merged BW:\t" + str_merged + "\n");
+
+			String str_timeslot = "[";
+			for (String ap: array_ap) {
+				double timeslot = map_timeslot.get(ap);
+				
+				str_timeslot += String.format("%.3f, ", timeslot);
+			}
+			str_timeslot = str_timeslot.subSequence(0, str_timeslot.length() - 2) + "]";
+			pw.write("Timeslot:\t\t" + str_timeslot + "\n");
+			pw.write("\n");
+			pw.close();
+		}
+	}
+	
+	private static void writeLogCommunication(String ue, int rate_origin, int segment) {
+		PrintWriter pw = null;
+		try {
+			pw = new PrintWriter(new FileWriter("log_communication.log", true));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return ;
+		}
+		
+		Date time = new Date();
+		String str_time = TIME_FORMAT.format(time);
+		pw.write(str_time + "\n");
+		double double_psnr = 0;
+		int int_rate_adjusted = map_rate.get(ue);
+		double double_x = map_ue.get(ue).getRatio(array_ap.get(0)) / 1000.0;
+		pw.write(ue + "/" + rate_origin + "->" + int_rate_adjusted + "/" + double_x + "/" + segment + "/" + double_psnr + "\n");
+		pw.write("\n");
+	}
+	
+	private static void doPreparation() {
+
+		/* ratio 계산하기 */
+		for (String ue: array_ue) {
+
+			int max_rssi = MIN_RSSI;
+			String max_ap = "";
+		 
+			for (String ap: array_ap) {
+				map_ue.get(ue).setRatio(ap, 0);
+				 
+				// RSSI 정보(즉 연결이 안된 경우)가 없는 경우 신호가 약하다고 판단
+				if ((map_ue.get(ue)).hasRSSI(ap) == false) {
+					//map_ue.get(ue).setRSSI(ap, MIN_RSSI);
+					map_ue.get(ue).setRSSI(ap, -80);
+					continue;
+				}
+				 
+				int rssi = map_ue.get(ue).getRSSI(ap);
+				 
+				if (rssi > max_rssi) {
+					max_rssi = rssi;
+					max_ap = ap;
+				}
+			}
+
+			// 모두 신호가 약할 경우 첫번째 AP에 가장 높은 ratio 부여
+			if (max_rssi == MIN_RSSI)
+				map_ue.get(ue).setRatio(array_ap.get(0), MAX_X);
+			else
+				map_ue.get(ue).setRatio(max_ap, MAX_X);
+		}
+		 
+		/* 로그 기록 */
+		writeLogAlgorithmPreparation();
+		System.out.println("Environment was loged");
+	}
+	
 	public static void main(String[] args) {
 		new ThreadRSSI().start();
 		new ThreadControl().start();
@@ -215,73 +387,8 @@ public class Test {
 		
 		while (true) {
 			 try {
-				 // 알고리즘 시작부
-				 for (String ue: array_ue) {
-
-					 int max_rssi = MIN_RSSI;
-					 String max_ap = "";
-				 
-					 for (String ap: array_ap) {
-						 map_ue.get(ue).setRatio(ap, 0);
-						 
-						 // RSSI 정보(즉 연결이 안된 경우)가 없는 경우 신호가 약하다고 판단
-						 if ((map_ue.get(ue)).hasRSSI(ap) == false) {
-							 //map_ue.get(ue).setRSSI(ap, MIN_RSSI);
-							 map_ue.get(ue).setRSSI(ap, -80);
-							 continue;
-						}
-						 
-						 int rssi = map_ue.get(ue).getRSSI(ap);
-						 
-						 if (rssi > max_rssi) {
-							 max_rssi = rssi;
-							 max_ap = ap;
-						 }
-					 }
-					 
-					 
-					 // 모두 신호가 약할 경우 첫번째 AP에 가장 높은 ratio 부여
-					 if (max_rssi == MIN_RSSI)
-						 map_ue.get(ue).setRatio(array_ap.get(0), MAX_X);
-					 else
-						 map_ue.get(ue).setRatio(max_ap, MAX_X);
-				 }
-				 
-				 // 알고리즘 동작
-				 String str_video = "[";
-				 String str_ratio = "[";
-				 String str_rssi = "[";
-				 String str_bandwidth = "[";
-				 for (String ue: array_ue) {
-						
-					 //str_video += ARRAY_VIDEO[video] + ", ";
-					 str_ratio += "[";
-					 str_rssi += "[";
-					 str_bandwidth += "[";
-						
-					 for (String ap: array_ap) {
-						 int x = map_ue.get(ue).getRatio(ap);
-						 int rssi = map_ue.get(ue).getRSSI(ap);
-						 int bandwidth = getBandwidth(rssi);
-							
-						 str_ratio += String.format("%.3f, ", ((double)x) / 1000);
-						 str_rssi += rssi + ", ";
-						 str_bandwidth += bandwidth + ", ";
-					 }
-						
-					 str_ratio = str_ratio.subSequence(0, str_ratio.length() - 2) +"], ";
-					 str_rssi = str_rssi.subSequence(0, str_rssi.length() - 2) + "], ";
-					 str_bandwidth = str_bandwidth.subSequence(0, str_bandwidth.length() - 2) + "], ";
-				 }
-				 //str_video = str_video.subSequence(0, str_video.length() - 2) + "]";
-				 str_ratio = str_ratio.subSequence(0, str_ratio.length() - 2) + "]";
-				 str_rssi = str_rssi.subSequence(0, str_rssi.length() - 2) + "] dB";
-				 str_bandwidth = str_bandwidth.subSequence(0, str_bandwidth.length() - 2) + "] kbps";
-				 //System.out.println("Video:\t\t" + str_video);
-				 System.out.println("Chunk ratio:\t" + str_ratio);
-				 System.out.println("RSSI:\t\t" + str_rssi);
-				 System.out.println("Bandwidth:\t" + str_bandwidth);
-				 System.out.println();
+				 /* 알고리즘 시작부 */
+				 doPreparation();
 
 				 int int_iter = 0;
 				 int int_over;
@@ -290,6 +397,7 @@ public class Test {
 				 double lam_min = MIN_LAM;
 				 double lam_mid = (MAX_LAM + MIN_LAM) / 2;
 					
+				 /* 솔루션을 찾기 위한 변수 */
 				 double max_psnr = 0;
 				 Map<String, Integer> max_rate = new HashMap<String, Integer>();
 					
@@ -483,86 +591,14 @@ public class Test {
 					 }		
 				 }
 					
-				 System.out.println("Iteration:\t" + int_iter);
-				 System.out.println("Lambda:\t\t" + lam_mid);
-				 String str_rate = "[";
-				 String str_psnr = "[";
-				 str_ratio = "[";
-				 String str_merged = "[";
-				 for (String ue: array_ue) {
-					 //int video = map_video.get(ue);
-					 int rate = map_rate.get(ue);
-					 double psnr = getPSNR(rate);
-					 double sum_bandwidth = 0;
-
-					 str_rate += (rate + ", ");
-					 str_psnr += String.format("%.2f, ", psnr);
-					 str_ratio += "[";
-						
-					 for (String ap: array_ap) {
-						 int x = map_ue.get(ue).getRatio(ap);
-						 int rssi = map_ue.get(ue).getRSSI(ap);
-							
-						 sum_bandwidth += (((double)x) / 1000) * getBandwidth(rssi);
-						 str_ratio += String.format("%.3f, ", ((double)x) / 1000);
-					 }
-						
-					 str_ratio = str_ratio.subSequence(0, str_ratio.length() - 2) +"], ";
-					 str_merged += (int)(sum_bandwidth) + ", ";
-				 }
-				 str_rate = str_rate.subSequence(0, str_rate.length() - 2) + "] kbps";
-				 str_psnr = str_psnr.subSequence(0, str_psnr.length() - 2) + "] dB";
-				 str_ratio = str_ratio.subSequence(0, str_ratio.length() - 2) + "]";
-				 str_merged = str_merged.subSequence(0, str_merged.length() - 2) + "] kbps";
-				 System.out.println("Bitrate:\t" + str_rate);
-				 System.out.println("PSNR:\t\t" + str_psnr);
-				 System.out.println("Chunk ratio:\t" + str_ratio);
-				 System.out.println("Merged BW:\t" + str_merged);
-				 String str_timeslot = "[";
-				 for (String ap: array_ap) {
-					 double timeslot = map_timeslot.get(ap);
-						
-					 str_timeslot += String.format("%.3f, ", timeslot);
-					}
-				 str_timeslot = str_timeslot.subSequence(0, str_timeslot.length() - 2) + "]";
-				 System.out.println("Timeslot:\t" + str_timeslot);
+				 writeLogAlgorithmResult(int_iter, lam_mid);
+				 System.out.println("Algorithm result was loged");
 				 
-					 
 		         Thread.sleep(2000);
 			 }catch(Exception e) {
 				 e.printStackTrace();
 			 }
 		}
-
-		/* 임시로 넣음 - RSSI 로그 */
-		/*
-		while(true) {
-			PrintWriter pw = null;
-	        try {
-	            Thread.sleep(2000);
-	            
-	            pw = new PrintWriter(new FileWriter("test.txt", true));
-	            String str_log = "";
-            	for (String ap: array_ap) {
-            		str_log += (ap + ":");
-            		for (String ue: array_ue) {
-	            		int rssi = map_ue.get(ue).getRSSI(ap);
-	            		
-	            		str_log += (rssi + ", ");
-	            		System.out.println(ap + " " + map_mac.get(ue) + " " + rssi);
-	            	}
-	            	str_log = (str_log.subSequence(0, str_log.length() - 2) + "/");
-	            }
-	            str_log = (str_log.subSequence(0, str_log.length() - 1) + "\n");
-	            pw.write(str_log);
-	            pw.close();
-	            
-	        }catch(Exception e) {
-	        	e.printStackTrace();
-	        }
-		}
-		*/
-		
 	}
 	
 	public static class UE{
@@ -687,6 +723,9 @@ public class Test {
 					reader.close();
 					socket_client.close();
 					socket_server.close();
+					
+					writeLogCommunication(str_ue, int_rate_origin, int_segment);
+					System.out.println("UE " + str_ue +"'s bitrate is " + int_rate_adjusted);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
