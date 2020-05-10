@@ -1,5 +1,6 @@
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -51,8 +52,11 @@ public class Test {
 	/* <AP, timeslot> */
 	private static Map<String, Double> map_timeslot;
 	
-	/* <UE, Video> 	  */
+	/* <UE, video> 	  */
 	private static Map<String, String> map_video;
+	
+	/* <video + rate, PSNR> */
+	private static Map<String, ArrayList<Double>> map_psnr;
 	
 	final static SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("[yyyy-MM-dd HH:mm:ss]");
 	
@@ -296,9 +300,9 @@ public class Test {
 	
 	private static void readCSV() {
 		
-		File file = new File("list_allow.csv");
+		File file_allow = new File("list_allow.csv");
         try {
-			BufferedReader reader = new BufferedReader(new FileReader(file));
+			BufferedReader reader = new BufferedReader(new FileReader(file_allow));
 	        String str_line;
 	        String str_type;
 	        String str_mac;
@@ -335,7 +339,33 @@ public class Test {
 	        reader.close();
         }catch(Exception e) {
         	e.printStackTrace();
+			System.exit(1);
         }
+        
+        File file_folder = new File("./csv/");
+        File[] array_file = file_folder.listFiles();
+        String[] array_element;
+        String str_video, str_bitrate;
+
+        try {
+	        for (int i = 0; i < array_file.length; i++) {
+	        	array_element = array_file[i].toString().split("_");
+	        	str_video = array_element[1];
+	        	str_bitrate = array_element[2].replace(".csv", "");
+	        	
+	        	ArrayList<Double> array_psnr = new ArrayList<Double>();
+	        	
+	        	BufferedReader reader = new BufferedReader(new FileReader(array_file[i]));
+		        String str_line;
+				while ((str_line = reader.readLine()) != null) 
+					array_psnr.add(Double.parseDouble(str_line.split(",")[1].trim()));
+
+				map_psnr.put(str_video + str_bitrate, array_psnr);
+	        }
+        } catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	private static void writeLogAlgorithmPreparation() {
@@ -521,6 +551,7 @@ public class Test {
 		map_rate = new HashMap<String, Integer>();
 		map_timeslot = new HashMap<String, Double>();
 		map_video = new HashMap<String, String>();
+		map_psnr = new HashMap<String, ArrayList<Double>>();
 		
 		readCSV();
 		
