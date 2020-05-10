@@ -48,6 +48,7 @@ def generatePort(port):
 		con.sendall(str(port).encode())
 			
 		thread_divide = threading.Thread(target = divideChunk, args = (port, ))
+		thread_divide.daemon = True
 		thread_divide.start()
 
 		port += 1
@@ -155,6 +156,7 @@ if __name__ == "__main__":
 
 	# 포트 생성기
 	thread_gen = threading.Thread(target = generatePort, args = (dic_device["session"]["port"], ))
+	thread_gen.daemon = True
 	thread_gen.start()
 
 	# HTTP 서버
