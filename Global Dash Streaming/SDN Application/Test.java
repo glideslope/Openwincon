@@ -405,7 +405,7 @@ public class Test {
 	
 	private static void giveDefaultValue() {
 		for (String ue: array_ue) {
-			map_video.put(ue, "sintel");
+			map_video.put(ue, "bunny");
 			map_segment.put(ue, 1);
 		}
 	}
@@ -523,7 +523,7 @@ public class Test {
 		}
 	}
 	
-	private static void writeLogCommunication(String ue, int rate_origin, int segment) {
+	private static void writeLogCommunication(String ue, int rate_origin) {
 		PrintWriter pw = null;
 		try {
 			pw = new PrintWriter(new FileWriter("log_communication.log", true));
@@ -538,11 +538,12 @@ public class Test {
 		pw.write(str_time + "\n");
 		int int_segment = map_segment.get(ue);
 		String str_video = map_video.get(ue);
-		double double_psnr = map_psnr.get(str_video).get(int_segment - 1);
 		int int_rate_adjusted = map_rate.get(ue);
+		double double_psnr = map_psnr.get(str_video + int_rate_adjusted).get(int_segment - 1);
 		double double_x = map_ue.get(ue).getRatio(array_ap.get(0)) / 1000.0;
-		pw.write(ue + "/" + rate_origin + "->" + int_rate_adjusted + "/" + double_x + "/" + segment + "/" + double_psnr + "\n");
+		pw.write(ue + "/" + rate_origin + "->" + int_rate_adjusted + "/" + double_x + "/" + int_segment + "/" + double_psnr + "\n");
 		pw.write("\n");
+		pw.close();
 	}
 	
 	private static void doPreparation() {
@@ -834,13 +835,14 @@ public class Test {
 					double double_x = map_ue.get(str_ue).getRatio(array_ap.get(0)) / 1000.0;
 					String str_message = int_rate_adjusted + "K/" + double_x;
 					socket_client.getOutputStream().write(str_message.getBytes());
+					
+					writeLogCommunication(str_ue, int_rate_origin);
+					System.out.println("UE " + str_ue +"'s bitrate is " + int_rate_adjusted);
 
 					reader.close();
 					socket_client.close();
 					socket_server.close();
 					
-					writeLogCommunication(str_ue, int_rate_origin, int_segment);
-					System.out.println("UE " + str_ue +"'s bitrate is " + int_rate_adjusted);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
