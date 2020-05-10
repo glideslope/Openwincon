@@ -24,6 +24,8 @@ public class Test {
 	final static double VAL_DURATION = 2.0;
 	final static double VAL_TIMESLOT = 2.0;
 	
+	final static double MAX_ITER = 1000;
+	
 	final static double MAX_LAM = 1;
 	final static double MIN_LAM = 0;
 	
@@ -345,8 +347,7 @@ public class Test {
 				 
 				// RSSI 정보(즉 연결이 안된 경우)가 없는 경우 신호가 약하다고 판단
 				if ((map_ue.get(ue)).hasRSSI(ap) == false) {
-					//map_ue.get(ue).setRSSI(ap, MIN_RSSI);
-					map_ue.get(ue).setRSSI(ap, -80);
+					map_ue.get(ue).setRSSI(ap, MIN_RSSI);
 					continue;
 				}
 				 
@@ -405,6 +406,14 @@ public class Test {
 				 /* 반복 시작 */
 				 while(true) {
 					 int_iter ++;
+					 
+					 /* 최대 횟수를 넘은 경우 (RSSI 정보가 불 충분한 경우) */
+					 if (int_iter > MAX_ITER) {
+						 /* rate를 최솟값으로 저장하고 끝냄 */
+						 for (String str_ue: array_ue) 
+							 map_rate.put(str_ue, ARRAY_BITRATE[0]);
+						 break;
+					 }
 						
 					 ArrayList<Integer> array_bandwidth = new ArrayList<Integer>();
 					 double sum_bandwidth = 0;
