@@ -68,6 +68,23 @@ public class Test {
 		return 5.5774 * Math.log(bitrate) + 1.72; // 임시
 	}
 	
+	private static void calculateBitrate(double lam) {
+		ArrayList<Integer> array_bandwidth = new ArrayList<Integer>();
+		double sum_bandwidth = 0;
+		for (String ue: array_ue) {
+			for (String ap: array_ap) {
+				int x = map_ue.get(ue).getRatio(ap);
+				double bandwidth = getBandwidth(map_ue.get(ue).getRSSI(ap));
+				sum_bandwidth += (((double)x) / 1000) * bandwidth;
+			}
+			array_bandwidth.add((int)(sum_bandwidth));
+			//int video = map_video.get(ue);
+			int rate = (int)(5.5774 / lam); // 임시
+			/* 여기서 rate는 인덱스가 아님 */
+			map_rate.put(ue, rate);
+		}
+	}
+	
 	private static void quantizeBitrate() {
 		ArrayList<Integer> array_upper = new ArrayList<Integer>();
 		ArrayList<Integer> array_lower = new ArrayList<Integer>();
@@ -112,6 +129,32 @@ public class Test {
 		}
 	}
 	
+	private static double calculateSumPSNR() {
+		double sum_psnr = 0;
+		for (String ue: array_ue) {
+			//int video = map_video.get(ue);
+			int rate = map_rate.get(ue);
+				
+			sum_psnr += getPSNR(rate);
+		}
+		
+		return sum_psnr;
+	}
+	
+	private static double compareMaxPSNR(Map<String, Integer> max_rate, double max_psnr, double sum_psnr){
+		double return_psnr = max_psnr; 
+		if(sum_psnr > max_psnr) {
+			 return_psnr = sum_psnr;
+			 for (String ue: array_ue) {
+				 int rate = map_rate.get(ue);
+					
+				 max_rate.put(ue, rate);
+			 }
+		 }
+		
+		return return_psnr;
+	}
+	
 	private static int checkTimeslot() {
 		int int_over = 0;
 		
@@ -154,6 +197,101 @@ public class Test {
 		
 		Collections.reverse(list_key);
 		return list_key;
+	}
+	
+	private static ArrayList<String> calculateBandwidthRatio(String min_ap, String max_ap) {
+		Map<String, Double> map = new HashMap<String, Double>();
+		for (String ue: array_ue) {
+			int max_rssi = map_ue.get(ue).getRSSI(max_ap);
+			int min_rssi = map_ue.get(ue).getRSSI(min_ap);
+			double max_bandwidth = getBandwidth(max_rssi);
+			double min_bandwidth = getBandwidth(min_rssi);
+				
+			map.put(ue, Math.abs((max_bandwidth / min_bandwidth - 1)));
+		}
+
+		return sortValue(map);
+	}
+	
+	private static Map<String, UE> backupX() {
+		Map<String, UE> map = new HashMap<String, UE>();
+		for (String ue: array_ue) {
+			map.put(ue, new UE());
+			for (String ap: array_ap) {
+				int x = map_ue.get(ue).getRatio(ap);
+					
+				map.get(ue).setRatio(ap, x);
+			}
+		}
+		
+		return map;
+	}
+	
+	private static void restoreX(Map<String, UE> map) {
+		for (String ue: array_ue) {
+			for (String ap: array_ap) {
+				int x = map.get(ue).getRatio(ap);
+					
+				map_ue.get(ue).setRatio(ap, x);
+			}
+		}
+	}
+	
+	private static ArrayList<String> findReducible(ArrayList<String> array_sorted, Map<String, UE> map, String max_ap){
+		ArrayList<String> array = new ArrayList<String>();
+		 for (String ue: array_sorted) {
+			 if (map.get(ue).getRatio(max_ap) == 0)
+				 continue;
+			 array.add(ue);
+		 }
+		 
+		 return array;
+	}
+	
+	private static void reduceTimeslot(ArrayList<String> array, String min_ap, String max_ap) {
+		boolean is_end = false;
+		for (String ue: array) {
+			if (is_end)
+				return;
+			
+			while(true) {
+				int x = map_ue.get(ue).getRatio(max_ap);
+			 
+				/* 더 이상 줄일 수 없는 경우 */
+				if (x == 0)
+					break;
+				
+				x -= DELTA_X;
+				map_ue.get(ue).setRatio(max_ap, x);
+				map_ue.get(ue).setRatio(min_ap, MAX_X - x);
+				
+				/* 바뀐 타임슬롯 체크 */
+				int int_over = checkTimeslot();
+				
+				/* 만약 타임슬롯 상태가 바뀐 경우 */
+				if (int_over == 0) {
+					is_end = true;
+					break;
+				}
+				
+				double sum_timeslot = 0;
+				for (String ap: array_ap) {
+					double timeslot = map_timeslot.get(ap);
+					
+					sum_timeslot += timeslot;
+				}
+					
+				/* 어떻게 조절하든 타임슬롯이 모두 넘칠 경우 */
+				if (sum_timeslot > array_ap.size() * VAL_TIMESLOT) {
+					is_end = true;
+					x += DELTA_X;
+					
+					map_ue.get(ue).setRatio(max_ap, x);
+					map_ue.get(ue).setRatio(min_ap, MAX_X - x);
+					break;
+				}
+			}
+		}
 	}
 	
 	private static void readCSV() {
@@ -408,50 +546,22 @@ public class Test {
 					 int_iter ++;
 					 
 					 /* 최대 횟수를 넘은 경우 (RSSI 정보가 불 충분한 경우) */
-					 if (int_iter > MAX_ITER) {
-						 /* rate를 최솟값으로 저장하고 끝냄 */
-						 for (String str_ue: array_ue) 
-							 map_rate.put(str_ue, ARRAY_BITRATE[0]);
+					 if (int_iter > MAX_ITER)
 						 break;
-					 }
 						
-					 ArrayList<Integer> array_bandwidth = new ArrayList<Integer>();
-					 double sum_bandwidth = 0;
-					 for (String ue: array_ue) {
-						 for (String ap: array_ap) {
-							 int x = map_ue.get(ue).getRatio(ap);
-							 double bandwidth = getBandwidth(map_ue.get(ue).getRSSI(ap));
-							 sum_bandwidth += (((double)x) / 1000) * bandwidth;
-						 }
-						 array_bandwidth.add((int)(sum_bandwidth));
-						 //int video = map_video.get(ue);
-						 int rate = (int)(5.5774 / lam_mid); // 임시
-						 /* 여기서 rate는 인덱스가 아님 */
-						 map_rate.put(ue, rate);
-					 }
-						
+					 /* 대략적인 비트레이트 계산 */
+					 calculateBitrate(lam_mid);
 					 /* 비트레이트 양자화 */
 					 quantizeBitrate();
 						
 					 /* 타임슬롯 체크 */
 					 int_over = checkTimeslot();
+					 
+					 /* int_over == 0 */
 					 if (int_over == 0) {
-						 double sum_psnr = 0;
-						 for (String ue: array_ue) {
-							 //int video = map_video.get(ue);
-							 int rate = map_rate.get(ue);
-								
-							 sum_psnr += getPSNR(rate);
-						 }
-							
-						 if(sum_psnr > max_psnr) {
-							 max_psnr = sum_psnr;
-							 for (String ue: array_ue) {
-								 int rate = map_rate.get(ue);
-									
-								 max_rate.put(ue, rate);
-							 }
-						 }
+						 /* 최대 PSNR 갱신 체크 */
+						 double sum_psnr = calculateSumPSNR();
+						 max_psnr = compareMaxPSNR(max_rate, max_psnr, sum_psnr);
 							
 						 if (Math.abs(lam_mid - lam_pre) < ERROR_LAM)
 							 break;
@@ -461,119 +571,38 @@ public class Test {
 							 lam_mid = (lam_min + lam_max) / 2;
 							 continue;
 						 }
-							
-					 }else if(int_over == 2) {
+					 }
+					 
+					 /* int_over == 2 */
+					 else if(int_over == 2) {
 						 lam_pre = lam_mid;
 						 lam_min = lam_mid;
 						 lam_mid = (lam_min + lam_max) / 2;
 						 continue;
 					 }
-
-					 /* int_over == 1 */
-						
+					 
+					 /* int_over == 1 */	
 					 /* 타임슬롯 많이 차지하는 AP 찾기 */
-					 if (map_timeslot.get(array_ap.get(0)) < map_timeslot.get(array_ap.get(1))){
-						 max_ap = array_ap.get(1);
-						 min_ap = array_ap.get(0);
-					 }else {
-						 max_ap = array_ap.get(0);
-						 min_ap = array_ap.get(1);
-					 }
+					 min_ap = array_ap.get((map_timeslot.get(array_ap.get(0)) < map_timeslot.get(array_ap.get(1)))? 0: 1);
+					 max_ap = array_ap.get((map_timeslot.get(array_ap.get(0)) < map_timeslot.get(array_ap.get(1)))? 1: 0);
 
-					 /* 대역폭 비율 고려 */
-					 Map<String, Double> map_diff = new HashMap<String, Double>();
-					 for (String ue: array_ue) {
-						 int max_rssi = map_ue.get(ue).getRSSI(max_ap);
-						 int min_rssi = map_ue.get(ue).getRSSI(min_ap);
-						 double max_bandwidth = getBandwidth(max_rssi);
-						 double min_bandwidth = getBandwidth(min_rssi);
-							
-						 map_diff.put(ue, Math.abs((max_bandwidth / min_bandwidth - 1)));
-					 }
-						
-					 ArrayList<String> array_sorted = sortValue(map_diff);
-						
+					 /* 대역폭 비율 고려하여 정렬 */
+					 ArrayList<String> array_sorted = calculateBandwidthRatio(min_ap, max_ap);
 					 /* x 값 백업 */
-					 Map<String, UE> map_copy = new HashMap<String, UE>();
-					 for (String ue: array_ue) {
-						 map_copy.put(ue, new UE());
-						 for (String ap: array_ap) {
-							 int x = map_ue.get(ue).getRatio(ap);
-								
-							 map_copy.get(ue).setRatio(ap, x);
-						 }
-					 }
-						
+					 Map<String, UE> map_copy = backupX();
+					 
 					 /* 타임슬롯 줄일 수 있는 UE 조사 */
-					 ArrayList<String> array_possible = new ArrayList<String>();
-					 for (String ue: array_sorted) {
-						 if (map_copy.get(ue).getRatio(max_ap) == 0)
-							 continue;
-						 array_possible.add(ue);
-					 }
-						
+					 ArrayList<String> array_possible = findReducible(array_sorted, map_copy, max_ap);	
 					 /* 타임슬롯 줄이기 */
-					 boolean is_end = false;
-					 for (String ue: array_possible) {
-						 if (is_end)
-							 break;
-						 while(true) {
-							 int x = map_ue.get(ue).getRatio(max_ap);
-							 /* 더 이상 줄일 수 없는 경우 */
-							 if (x == 0)
-								 break;
-								
-							 x -= DELTA_X;
-							 map_ue.get(ue).setRatio(max_ap, x);
-							 map_ue.get(ue).setRatio(min_ap, MAX_X - x);
-								
-							 /* 바뀐 타임슬롯 체크 */
-							 int_over = checkTimeslot();
-								
-							 /* 만약 타임슬롯 상태가 바뀐 경우 */
-							 if (int_over == 0) {
-								 is_end = true;
-								 break;
-							 }
-								
-							 double sum_timeslot = 0;
-							 for (String ap: array_ap) {
-								 double timeslot = map_timeslot.get(ap);
-									
-								 sum_timeslot += timeslot;
-							 }
-									
-							 /* 어떻게 조절하든 타임슬롯이 모두 넘칠 경우 */
-							 if (sum_timeslot > array_ap.size() * VAL_TIMESLOT) {
-								 is_end = true;
-								 x += DELTA_X;
-									
-								 map_ue.get(ue).setRatio(max_ap, x);
-								 map_ue.get(ue).setRatio(min_ap, MAX_X - x);
-								 break;
-							 }
-						 }
-					 }
+					 reduceTimeslot(array_possible, min_ap, max_ap);
 						
+					 /* int_over == 0 */
 					 if (int_over == 0) {
 						 int_iter ++;
-						
-						 double sum_psnr = 0;
-						 for (String ue: array_ue) {
-							 //int video = map_video.get(ue);
-							 int rate = map_rate.get(ue);
-								
-							 sum_psnr += getPSNR(rate);
-						 }
-							
-						 if(sum_psnr > max_psnr) {
-							 max_psnr = sum_psnr;
-							 for (String ue: array_ue) {
-								 int rate = map_rate.get(ue);
-									
-								 max_rate.put(ue, rate);
-							 }
-						 }
+
+						 /* 최대 PSNR 갱신 체크 */
+						 double sum_psnr = calculateSumPSNR();
+						 max_psnr = compareMaxPSNR(max_rate, max_psnr, sum_psnr);
 							
 						 if (Math.abs(lam_mid - lam_pre) < ERROR_LAM)
 							 break;
@@ -583,15 +612,12 @@ public class Test {
 							 lam_mid = (lam_min + lam_max) / 2;
 							 continue;
 						 }
-					 }else {
+					 }
+					 
+					 /* int_over == 1, 2 */
+					 else {
 						 /* x 값 복구 */
-						 for (String ue: array_ue) {
-							 for (String ap: array_ap) {
-								 int x = map_copy.get(ue).getRatio(ap);
-									
-								 map_ue.get(ue).setRatio(ap, x);
-							 }
-						 }
+						 restoreX(map_copy);
 							
 						 lam_pre = lam_mid;
 						 lam_min = lam_mid;
