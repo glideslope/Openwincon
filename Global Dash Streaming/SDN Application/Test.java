@@ -298,7 +298,7 @@ public class Test {
 				if (sum_timeslot > array_ap.size() * VAL_TIMESLOT) {
 					is_end = true;
 					x += DELTA_X;
-					
+
 					map_ue.get(ue).setRatio(max_ap, x);
 					map_ue.get(ue).setRatio(min_ap, MAX_X - x);
 					break;
@@ -421,13 +421,11 @@ public class Test {
 		}
     	
 		String str_video = "[";
-		String str_ratio = "[";
 		String str_rssi = "[";
 		String str_bandwidth = "[";
 		for (String ue: array_ue) {
 				
 			str_video += map_video.get(ue) + ", ";
-			str_ratio += "[";
 			str_rssi += "[";
 			str_bandwidth += "[";
 				
@@ -436,17 +434,14 @@ public class Test {
 				int rssi = map_ue.get(ue).getRSSI(ap);
 				int bandwidth = getBandwidth(rssi);
 					
-				str_ratio += String.format("%.3f, ", ((double)x) / 1000);
 				str_rssi += rssi + ", ";
 				str_bandwidth += bandwidth + ", ";
 			}
 				
-			str_ratio = str_ratio.subSequence(0, str_ratio.length() - 2) +"], ";
 			str_rssi = str_rssi.subSequence(0, str_rssi.length() - 2) + "], ";
 			str_bandwidth = str_bandwidth.subSequence(0, str_bandwidth.length() - 2) + "], ";
 		}
 		str_video = str_video.subSequence(0, str_video.length() - 2) + "]";
-		str_ratio = str_ratio.subSequence(0, str_ratio.length() - 2) + "]";
 		str_rssi = str_rssi.subSequence(0, str_rssi.length() - 2) + "] dB";
 		str_bandwidth = str_bandwidth.subSequence(0, str_bandwidth.length() - 2) + "] kbps";
 		
@@ -454,7 +449,6 @@ public class Test {
 		String str_time = TIME_FORMAT.format(time);
 		pw.write(str_time + "\n");
 		pw.write("Video:\t\t" + str_video + "\n");
-		pw.write("Chunk ratio:\t" + str_ratio + "\n");
 		pw.write("RSSI:\t\t" + str_rssi + "\n");
 		pw.write("Bandwidth:\t" + str_bandwidth + "\n");
 		pw.write("\n");
@@ -507,7 +501,7 @@ public class Test {
 			str_merged = str_merged.subSequence(0, str_merged.length() - 2) + "] kbps";
 			pw.write("Bitrate:\t\t" + str_rate + "\n");
 			pw.write("PSNR:\t\t" + str_psnr + "\n");
-			pw.write("Chunk ratio:\t" + str_ratio + "\n");
+			pw.write("Delivery ratio:\t" + str_ratio + "\n");
 			pw.write("Merged BW:\t" + str_merged + "\n");
 
 			String str_timeslot = "[";
@@ -675,11 +669,14 @@ public class Test {
 					 ArrayList<String> array_possible = findReducible(array_sorted, map_copy, max_ap);	
 					 /* 타임슬롯 줄이기 */
 					 reduceTimeslot(array_possible, min_ap, max_ap);
-						
+
+					 /* 타임슬롯 체크 */
+					 int_over = checkTimeslot();
+					 
 					 /* int_over == 0 */
 					 if (int_over == 0) {
 						 int_iter ++;
-
+						 
 						 /* 최대 PSNR 갱신 체크 */
 						 double sum_psnr = calculateSumPSNR();
 						 max_psnr = compareMaxPSNR(max_rate, max_psnr, sum_psnr);

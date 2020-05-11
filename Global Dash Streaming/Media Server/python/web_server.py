@@ -62,38 +62,47 @@ def divideChunk(port):
 			socket_server.listen(1)   
 			
 			con, addr = socket_server.accept()
+			con.settimeout(2000)
 			
-			# OFFSET 계산하기....
-			# 처음 한번만 계산
-			if i == 0: 
-				print("connected...")
-				raw = con.recv(CONST_KB).decode("utf-8")
-				type = raw.split("/")[3]
-				query = raw.split("/")[-1]
-				object = "../media/" + type + "/" + query.split("?")[0]
-				file = open(object, "rb")
-				byte_data = file.read()
+			try:
+				# OFFSET 계산하기....
+				# 처음 한번만 계산
+				if i == 0: 
+					print("connected...")
+					raw = con.recv(CONST_KB).decode("utf-8")
+					type = raw.split("/")[3]
+					query = raw.split("/")[-1]
+					object = "../media/" + type + "/" + query.split("?")[0]
+					file = open(object, "rb")
+					byte_data = file.read()
 
-				divide = float(query.split("?")[1].split("=")[1])
-				length = sys.getsizeof(byte_data)
-				offset = int(length * divide)
+					divide = float(query.split("?")[1].split("=")[1])
+					length = sys.getsizeof(byte_data)
+					offset = int(length * divide)
 
-			if i == 0:
-				con.sendall(str(offset).encode())
-			else:
-				con.sendall(str(length - offset).encode())
-	
-			# 클라이언트로 부터 응답이 올 경우
-			str_ack = con.recv(CONST_KB).decode()
-			if str_ack == "ok":
 				if i == 0:
-					con.sendall(byte_data[0: offset])
-					print(object, offset, "bytes")
+					con.sendall(str(offset).encode())
 				else:
-					con.sendall(byte_data[offset: length])
-					print(object, length - offset, "bytes")
-			con.close()
-			socket_server.close()
+					con.sendall(str(length - offset).encode())
+	
+				# 클라이언트로 부터 응답이 올 경우
+				str_ack = con.recv(CONST_KB).decode()
+				if str_ack == "next":
+					if i == 0:
+						con.sendall(byte_data[0: offset])
+						str_log = "To %s, %s, %d bytes" % (addr[0], object.split("/")[-1], offset)
+					else:
+						con.sendall(byte_data[offset: length])
+						str_log = "To %s, %s, %d bytes" % (addr[0], object.split("/")[-1], length - offset)
+					print(str_log)
+				con.close()
+				socket_server.close()
+
+			except:
+				con.close()
+				socket_server.close()
+				print("Initialize session port: %d" % port)
+				break
 
 class HandlerHTTP(BaseHTTPRequestHandler):
 

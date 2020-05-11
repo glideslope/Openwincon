@@ -5,6 +5,7 @@ from socket import *
 import os
 import sys
 import re
+import time
 
 PATTERN_BITRATE = re.compile("\d+K|\d+M")
 
@@ -91,47 +92,61 @@ class HandlerProxy(BaseHTTPRequestHandler):
 
 		if ".m4s" in self.path:
 
-			socket_control = socket()
-			socket_control.connect((dic_device["control"]["ip"], dic_device["control"]["port"]))
+			while True:
+				try:
+					socket_control = socket()
+					socket_control.connect((dic_device["control"]["ip"], dic_device["control"]["port"]))
 
-			str_bitrate_origin = PATTERN_BITRATE.search(self.path).group()
-			mac_ue = list_adaptor[0][0].replace("-", "").lower()
-			str_type = self.path.split("/")[3]
-			int_seg = int(self.path.split("dash")[1].split(".")[0])
+					str_bitrate_origin = PATTERN_BITRATE.search(self.path).group()
+					mac_ue = list_adaptor[0][0].replace("-", "").lower()
+					str_type = self.path.split("/")[3]
+					int_seg = int(self.path.split("dash")[1].split(".")[0])
 
-			str_message = "%s/%s/%s/%d\n" % (str_bitrate_origin, mac_ue, str_type, int_seg)
-			socket_control.sendall((str_message).encode())
+					str_message = "%s/%s/%s/%d\n" % (str_bitrate_origin, mac_ue, str_type, int_seg)
+					socket_control.sendall((str_message).encode())
 			
-			list_data = socket_control.recv(CONST_KB).decode().split("/")
-			str_bitrate_adjusted = list_data[0]
-			str_ratio = list_data[1]
-			socket_control.close()
+					list_data = socket_control.recv(CONST_KB).decode().split("/")
+					str_bitrate_adjusted = list_data[0]
+					str_ratio = list_data[1]
+					socket_control.close()
+					break
+				except:
+					print("Reconnecting to SDN Controller...")
+					time.sleep(0.5)
+					continue
 
 			query = self.path.replace(str_bitrate_origin, str_bitrate_adjusted) + "?x=" + str_ratio
 			print("query:", query)
 
-			byte_data = bytes(b"")
-			for i, element in enumerate(list_adaptor):
-				mac_ue = element[0]
-				ip_ue = element[1]
+			while True:
+				try:
+					byte_data = bytes(b"")
+					for i, element in enumerate(list_adaptor):
+						mac_ue = element[0]
+						ip_ue = element[1]
 
-				socket_interface = socket()
-				socket_interface.bind((ip_ue, 0))
-				socket_interface.connect((dic_device["server"]["ip"], dic_device["server"]["port"]))
-				# 쿼리는 처음 한번만
-				if i == 0:
-					socket_interface.sendall(query.encode())
+						socket_interface = socket()
+						socket_interface.bind((ip_ue, 0))
+						socket_interface.connect((dic_device["server"]["ip"], dic_device["server"]["port"]))
+						# 쿼리는 처음 한번만
+						if i == 0:
+							socket_interface.sendall(query.encode())
         
-				str_size = socket_interface.recv(CONST_KB).decode()
+						str_size = socket_interface.recv(CONST_KB).decode()
         
-				socket_interface.sendall(bytes(b"ok"))
+						socket_interface.sendall(bytes(b"next"))
 
-				byte_data += socket_interface.recv(int(str_size))
-				print("%s: %s bytes" % (mac_ue, str_size))
+						byte_data += socket_interface.recv(int(str_size))
+						print("%s: %s bytes" % (mac_ue, str_size))
 
-			self._set_headers(200)
-			self.wfile.write(byte_data)
-
+					self._set_headers(200)
+					self.wfile.write(byte_data)
+					break
+				except:
+					print("Reconnecting to Media Server...")
+					time.sleep(2.5)
+					continue
+					
 		else:
 			try:
 				self._set_headers(200)

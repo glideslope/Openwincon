@@ -91,11 +91,16 @@ if __name__ == "__main__":
 		sys.exit()
 
 	while True:
-		socket_ap = socket(AF_INET, SOCK_STREAM)
-		socket_ap.connect((dic_device["collector"]["ip"], dic_device["collector"]["port"]))
+		try:
+			socket_ap = socket(AF_INET, SOCK_STREAM)
+			socket_ap.connect((dic_device["collector"]["ip"], dic_device["collector"]["port"]))
 		
-		str_message = makeMessage(str_mac)
-		socket_ap.sendall(str_message.encode())
-		socket_ap.close()
-
-		time.sleep(2)
+			str_message = makeMessage(str_mac)
+			socket_ap.sendall(str_message.encode())
+			socket_ap.close()
+			
+			print("Sent RSSI info to SDN Controller")	
+			time.sleep(2)
+		except:
+			print("Reconnecting...")
+			time.sleep(2)
