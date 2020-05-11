@@ -410,10 +410,10 @@ public class Test {
 		}
 	}
 	
-	private static void writeLogAlgorithmPreparation() {
+	private static void writeLogEnvironment() {
 		PrintWriter pw = null;
 		try {
-			pw = new PrintWriter(new FileWriter("log_algorithm.log", true));
+			pw = new PrintWriter(new FileWriter("log_environment.log", true));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -455,7 +455,7 @@ public class Test {
 		pw.close();
 	}
 	
-	private static void writeLogAlgorithmResult(int iter, double lam) {
+	private static void writeLogAlgorithm(int iter, double lam) {
 		PrintWriter pw = null;
 		try {
 			pw = new PrintWriter(new FileWriter("log_algorithm.log", true));
@@ -573,7 +573,7 @@ public class Test {
 		}
 		 
 		/* 로그 기록 */
-		writeLogAlgorithmPreparation();
+		writeLogEnvironment();
 		System.out.println("Environment was loged");
 	}
 	
@@ -703,7 +703,7 @@ public class Test {
 					 }		
 				 }
 					
-				 writeLogAlgorithmResult(int_iter, lam_mid);
+				 writeLogAlgorithm(int_iter, lam_mid);
 				 System.out.println("Algorithm result was loged");
 				 
 		         Thread.sleep(2000);
