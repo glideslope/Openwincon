@@ -91,36 +91,28 @@ class HandlerProxy(BaseHTTPRequestHandler):
 	def do_GET(self):
 
 		if ".m4s" in self.path:
+			socket_control = socket()
+			socket_control.connect((dic_device["control"]["ip"], dic_device["control"]["port"]))
 
-			while True:
-				try:
-					socket_control = socket()
-					socket_control.connect((dic_device["control"]["ip"], dic_device["control"]["port"]))
+			str_bitrate_origin = PATTERN_BITRATE.search(self.path).group()
+			mac_ue = list_adaptor[0][0].replace("-", "").lower()
+			str_type = self.path.split("/")[3]
+			int_seg = int(self.path.split("dash")[1].split(".")[0])
 
-					str_bitrate_origin = PATTERN_BITRATE.search(self.path).group()
-					mac_ue = list_adaptor[0][0].replace("-", "").lower()
-					str_type = self.path.split("/")[3]
-					int_seg = int(self.path.split("dash")[1].split(".")[0])
-
-					str_message = "%s/%s/%s/%d\n" % (str_bitrate_origin, mac_ue, str_type, int_seg)
-					socket_control.sendall((str_message).encode())
+			str_message = "%s/%s/%s/%d\n" % (str_bitrate_origin, mac_ue, str_type, int_seg)
+			socket_control.sendall((str_message).encode())
 			
-					list_data = socket_control.recv(CONST_KB).decode().split("/")
-					str_bitrate_adjusted = list_data[0]
-					str_ratio = list_data[1]
-					socket_control.close()
-					break
-				except:
-					print("Reconnecting to SDN Controller...")
-					time.sleep(0.5)
-					continue
+			list_data = socket_control.recv(CONST_KB).decode().split("/")
+			str_bitrate_adjusted = list_data[0]
+			str_ratio = list_data[1]
+			socket_control.close()
 
 			query = self.path.replace(str_bitrate_origin, str_bitrate_adjusted) + "?x=" + str_ratio
 			print("query:", query)
 
 			while True:
 				try:
-					byte_data = bytes(b"")
+					sum_data = bytes(b"")
 					for i, element in enumerate(list_adaptor):
 						mac_ue = element[0]
 						ip_ue = element[1]
@@ -132,21 +124,28 @@ class HandlerProxy(BaseHTTPRequestHandler):
 						if i == 0:
 							socket_interface.sendall(query.encode())
         
-						str_size = socket_interface.recv(CONST_KB).decode()
-        
-						socket_interface.sendall(bytes(b"next"))
+						int_size = int(socket_interface.recv(CONST_KB).decode())
+						byte_data = socket_interface.recv(int_size)
+				
+						print("%s: %d bytes" % (mac_ue, int_size))
+						sum_data += byte_data
 
-						byte_data += socket_interface.recv(int(str_size))
-						print("%s: %s bytes" % (mac_ue, str_size))
-
-					self._set_headers(200)
-					self.wfile.write(byte_data)
+						check_byte = sys.getsizeof(byte_data) + 16
+						if (check_byte != 33 or int_size != 0) and (check_byte != int_size):
+							print("media file was corrupted (%d / %d bytes)" % (check_byte, int_size))
+							socket_interface.sendall(bytes(b"re"))
+							socket_interface.close()
+							raise Exception
+						else:
+							socket_interface.sendall(bytes(b"next"))
+							socket_interface.close()
 					break
 				except:
-					print("Reconnecting to Media Server...")
-					time.sleep(2.5)
-					continue
-					
+					time.sleep(2)
+
+			self._set_headers(200)
+			self.wfile.write(sum_data)	
+
 		else:
 			try:
 				self._set_headers(200)

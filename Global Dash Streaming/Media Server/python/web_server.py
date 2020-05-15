@@ -56,15 +56,15 @@ def generatePort(port):
 
 def divideChunk(port):
 	while True:
-		for i in range(NUM_AP):
-			socket_server = socket()
-			socket_server.bind(('', port))
-			socket_server.listen(1)   
+		try:
+			for i in range(NUM_AP):
+				socket_server = socket()
+				socket_server.bind(('', port))
+				socket_server.listen(1)   
 			
-			con, addr = socket_server.accept()
-			con.settimeout(2000)
+				con, addr = socket_server.accept()
+				con.settimeout(2000)
 			
-			try:
 				# OFFSET 계산하기....
 				# 처음 한번만 계산
 				if i == 0: 
@@ -80,29 +80,28 @@ def divideChunk(port):
 					length = sys.getsizeof(byte_data)
 					offset = int(length * divide)
 
-				if i == 0:
 					con.sendall(str(offset).encode())
+					con.sendall(byte_data[0: offset])
+					str_log = "To %s, %s, %d bytes" % (addr[0], object.split("/")[-1], offset)
 				else:
 					con.sendall(str(length - offset).encode())
-	
-				# 클라이언트로 부터 응답이 올 경우
+					con.sendall(byte_data[offset: length])
+					str_log = "To %s, %s, %d bytes" % (addr[0], object.split("/")[-1], length - offset)
+					
+				print(str_log)
+
 				str_ack = con.recv(CONST_KB).decode()
-				if str_ack == "next":
-					if i == 0:
-						con.sendall(byte_data[0: offset])
-						str_log = "To %s, %s, %d bytes" % (addr[0], object.split("/")[-1], offset)
-					else:
-						con.sendall(byte_data[offset: length])
-						str_log = "To %s, %s, %d bytes" % (addr[0], object.split("/")[-1], length - offset)
-					print(str_log)
+				
+				# 응답 받고 소켓 닫기			
 				con.close()
 				socket_server.close()
 
-			except:
-				con.close()
-				socket_server.close()
-				print("Initialize session port: %d" % port)
-				break
+				# 재요청시
+				if str_ack == "re":
+					raise Exception
+
+		except:
+			print("Initialize session port: %d" % port)
 
 class HandlerHTTP(BaseHTTPRequestHandler):
 
