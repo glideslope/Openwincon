@@ -44,63 +44,64 @@ def generatePort(port):
 		socket_gen.listen(1)   
 
 		con, addr = socket_gen.accept()
-		print("new session port:", port)
 		con.sendall(str(port).encode())
 			
-		thread_divide = threading.Thread(target = divideChunk, args = (port, ))
-		thread_divide.daemon = True
-		thread_divide.start()
+		print("New session port:", end = "")
+		for ap in range(NUM_AP):
+			print(" %d"% port, end = "")
+			thread_divide = threading.Thread(target = divideChunk, args = (port, ))
+			thread_divide.daemon = True
+			thread_divide.start()
+			port += 1
 
-		port += 1
+		print()
 		time.sleep(1)
 
 def divideChunk(port):
 	while True:
 		try:
-			for i in range(NUM_AP):
-				socket_server = socket()
-				socket_server.bind(('', port))
-				socket_server.listen(1)   
+			socket_server = socket()
+			socket_server.bind(('', port))
+			socket_server.listen(1)   
 			
-				con, addr = socket_server.accept()
-				con.settimeout(2000)
+			con, addr = socket_server.accept()
+			con.settimeout(2000)
 			
-				# OFFSET 계산하기....
-				# 처음 한번만 계산
-				if i == 0: 
-					print("connected...")
-					raw = con.recv(CONST_KB).decode("utf-8")
-					type = raw.split("/")[3]
-					query = raw.split("/")[-1]
-					object = "../media/" + type + "/" + query.split("?")[0]
-					file = open(object, "rb")
-					byte_data = file.read()
+			# Query 분석
+			raw = con.recv(CONST_KB).decode("utf-8")
+			type = raw.split("/")[3]
+			query = raw.split("/")[-1]
+			object = "../media/" + type + "/" + query.split("?")[0]
+			file = open(object, "rb")
+			byte_data = file.read()
 
-					divide = float(query.split("?")[1].split("=")[1])
-					length = sys.getsizeof(byte_data)
-					offset = int(length * divide)
+			# OFFSET 계산하기
+			divide = float(query.split("?")[1].split("=")[1])
+			length = sys.getsizeof(byte_data)
+			offset = int(length * divide)
 
-					con.sendall(str(offset).encode())
-					con.sendall(byte_data[0: offset])
-					str_log = "To %s, %s, %d bytes" % (addr[0], object.split("/")[-1], offset)
-				else:
-					con.sendall(str(length - offset).encode())
-					con.sendall(byte_data[offset: length])
-					str_log = "To %s, %s, %d bytes" % (addr[0], object.split("/")[-1], length - offset)
+			if port % 2 == 0:
+				con.sendall(str(offset).encode())
+				con.sendall(byte_data[0: offset])
+				str_log = "To session %d, %s, %d bytes" % (port, object.split("/")[-1], offset)
+			else:
+				con.sendall(str(length - offset).encode())
+				con.sendall(byte_data[offset: length])
+				str_log = "To session %d, %s, %d bytes" % (port, object.split("/")[-1], length - offset)
 					
-				print(str_log)
+			print(str_log)
 
-				str_ack = con.recv(CONST_KB).decode()
+			str_ack = con.recv(CONST_KB).decode()
 				
-				# 응답 받고 소켓 닫기			
-				con.close()
-				socket_server.close()
+			# 응답 받고 소켓 닫기			
+			con.close()
+			socket_server.close()
 
-				# 재요청시
-				if str_ack == "re":
-					raise Exception
+			# 재요청시
+			if str_ack == "re":
+				raise Exception
 
-		except:
+		except Exception as e:
 			print("Initialize session port: %d" % port)
 
 class HandlerHTTP(BaseHTTPRequestHandler):
@@ -116,37 +117,27 @@ class HandlerHTTP(BaseHTTPRequestHandler):
 
 	def do_GET(self):
 		try:
-			if self.path[-4:] == ".m4s":
-				mode_divide = True
+			if self.path == "/":
+				object = "../html/index.html"
+			elif self.path == "/index":
+				object = "../html/index.html"
+			elif self.path == "/index.html":
+				object = "../html/index.html"
+
+			elif self.path[-3:] == ".js":
+				object = "../html" + self.path
+
+			elif self.path[-4:] == ".mpd":
+				object = "../media" + self.path
+			elif self.path[-4:] == ".mp4":
+				object = "../media" + self.path
+
 			else:
-				mode_divide = False
-				if self.path == "/":
-					object = "../html/index.html"
-				elif self.path == "/index":
-					object = "../html/index.html"
-				elif self.path == "/index.html":
-					object = "../html/index.html"
-
-				elif self.path[-3:] == ".js":
-					object = "../html" + self.path
-
-				elif self.path[-4:] == ".mpd":
-					object = "../media" + self.path
-				elif self.path[-4:] == ".mp4":
-					object = "../media" + self.path
-
-				else:
-					raise FileNotFoundError
+				raise FileNotFoundError
 				
-			if mode_divide == False:
-				self._set_headers(200)
-				file = open(object, "rb")
-				self.wfile.write(file.read())
-
-			# Chunk 나누는 것은 쓰레드에서 따로 처리
-			else:
-				self._set_headers(200)
-				self.wfile.write()
+			self._set_headers(200)
+			file = open(object, "rb")
+			self.wfile.write(file.read())
 
 		except FileNotFoundError:
 			self._set_headers(404)

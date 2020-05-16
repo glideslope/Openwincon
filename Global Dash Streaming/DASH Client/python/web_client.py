@@ -6,6 +6,9 @@ import os
 import sys
 import re
 import time
+import traceback
+import logging
+logging.basicConfig(level = logging.ERROR)
 
 PATTERN_BITRATE = re.compile("\d+K|\d+M")
 
@@ -76,6 +79,7 @@ def getPort():
 	socket_gen = socket()
 	socket_gen.connect((dic_device["gen"]["ip"], dic_device["gen"]["port"]))
 	port = int(socket_gen.recv(CONST_KB).decode())
+	print("Data port:", port, port + 1)
 	return port
 
 class HandlerProxy(BaseHTTPRequestHandler):
@@ -119,10 +123,9 @@ class HandlerProxy(BaseHTTPRequestHandler):
 
 						socket_interface = socket()
 						socket_interface.bind((ip_ue, 0))
-						socket_interface.connect((dic_device["server"]["ip"], dic_device["server"]["port"]))
-						# 쿼리는 처음 한번만
-						if i == 0:
-							socket_interface.sendall(query.encode())
+						socket_interface.connect((dic_device["server"]["ip"], dic_device["server"]["port"] + i))
+						
+						socket_interface.sendall(query.encode())
         
 						int_size = int(socket_interface.recv(CONST_KB).decode())
 						byte_data = socket_interface.recv(int_size)
@@ -140,7 +143,8 @@ class HandlerProxy(BaseHTTPRequestHandler):
 							socket_interface.sendall(bytes(b"next"))
 							socket_interface.close()
 					break
-				except:
+				except Exception as e :
+					print(e)
 					time.sleep(2)
 
 			self._set_headers(200)
