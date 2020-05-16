@@ -131,10 +131,11 @@ class HandlerProxy(BaseHTTPRequestHandler):
 						byte_data = socket_interface.recv(int_size)
 				
 						print("%s: %d bytes" % (mac_ue, int_size))
-						sum_data += byte_data
+						if int_size != 0:
+							sum_data += byte_data
 
-						check_byte = sys.getsizeof(byte_data) + 16
-						if (check_byte != 33 or int_size != 0) and (check_byte != int_size):
+						check_byte = len(byte_data)
+						if int_size != 0 and abs(check_byte - int_size) > 33:
 							print("media file was corrupted (%d / %d bytes)" % (check_byte, int_size))
 							socket_interface.sendall(bytes(b"re"))
 							socket_interface.close()
