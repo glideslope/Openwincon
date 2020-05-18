@@ -18,7 +18,8 @@ import java.util.Map;
 public class Test {
 	final static int PORT_RSSI = 20000;
 	final static int PORT_CONTROL = 30000;
-	
+	final static int NUM_CONNECTION = 5;
+
 	final static int MIN_RSSI = -99;
 	
 	final static double VAL_DURATION = 2.0;
@@ -579,7 +580,8 @@ public class Test {
 	
 	public static void main(String[] args) {
 		new ThreadRSSI().start();
-		new ThreadControl().start();
+	 	for (int i = 0; i < NUM_CONNECTION; i++)
+	    		new ThreadControl(PORT_CONTROL + i).start();
 		
 		array_ue = new ArrayList<String>();
 		array_ap = new ArrayList<String>();
@@ -797,13 +799,17 @@ public class Test {
 	
 	public static class ThreadControl extends Thread{
 
+		private int port;
+
+		public ThreadControl(int port) { this.port = port; }
+
 		@Override
 		public void run() {
 			// TODO Auto-generated method stub
 			while(true) {
 				ServerSocket socket_server = null;
 				try {
-					socket_server = new ServerSocket(PORT_CONTROL);
+					socket_server = new ServerSocket(port);
 					Socket socket_client = socket_server.accept();
 
 					BufferedReader reader = new BufferedReader(new InputStreamReader(socket_client.getInputStream(), "UTF-8"));
