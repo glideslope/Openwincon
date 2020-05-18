@@ -6,6 +6,11 @@ python 폴더
 
 <br>
 
+# 실행 환경  
+- 리눅스에서만 실행 가능  
+
+<br>
+
 # OVS bridge 만들기
 - 최초 한번 설정
 - \<IP\> 에 SDN Controller IP 입력
