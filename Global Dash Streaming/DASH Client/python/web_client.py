@@ -76,10 +76,17 @@ def getInterface():
 	return list_adaptor
 
 def getPort():
-	socket_gen = socket()
-	socket_gen.connect((dic_device["gen"]["ip"], dic_device["gen"]["port"]))
-	port = int(socket_gen.recv(CONST_KB).decode())
-	print("Data port:", port, port + 1)
+	while True:
+		try:
+			socket_gen = socket()
+			socket_gen.connect((dic_device["gen"]["ip"], dic_device["gen"]["port"]))
+			port = int(socket_gen.recv(CONST_KB).decode())
+			print("Data port:", port, port + 1)
+			break
+		except Exception as e :
+			print(e)
+			time.sleep(0.1)
+
 	return port
 
 class HandlerProxy(BaseHTTPRequestHandler):
@@ -146,7 +153,7 @@ class HandlerProxy(BaseHTTPRequestHandler):
 					break
 				except Exception as e :
 					print(e)
-					time.sleep(2)
+					time.sleep(0.1)
 
 			self._set_headers(200)
 			self.wfile.write(sum_data)	
