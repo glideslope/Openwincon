@@ -103,7 +103,7 @@ class HandlerProxy(BaseHTTPRequestHandler):
 		self.end_headers()
 
 	def do_GET(self):
-		global list_bitrate
+		global list_bitrate, int_seg_finished
 
 		if ".m4s" in self.path:
 			while True:
@@ -115,6 +115,12 @@ class HandlerProxy(BaseHTTPRequestHandler):
 					mac_ue = list_adaptor[0][0].replace("-", "").lower()
 					str_type = self.path.split("/")[3]
 					int_seg = int(self.path.split("dash")[1].split(".")[0])
+					if int_seg_finished + 1 != int_seg:
+						str_origin = "dash%d" % int_seg
+						
+						int_seg = int_seg_finished + 1
+						str_change = "dash%d" % int_seg
+						self.path = self.path.replace(str_origin, str_change)
 
 					str_message = "%s/%s/%s/%d\n" % (str_bitrate_origin, mac_ue, str_type, int_seg)
 					socket_control.sendall((str_message).encode())
@@ -174,6 +180,7 @@ class HandlerProxy(BaseHTTPRequestHandler):
 
 			self._set_headers(200)
 			self.wfile.write(sum_data)	
+			int_seg_finished += 1
 
 		else:
 			try:
@@ -194,7 +201,7 @@ class HandlerProxy(BaseHTTPRequestHandler):
 				print(e)
 
 if __name__ == "__main__":
-	global dic_device, list_adaptor
+	global dic_device, list_adaptor, list_bitrate, int_seg_finished
 
 	dic_device = readCSV()
 	if dic_device == None:
@@ -215,5 +222,7 @@ if __name__ == "__main__":
 
 	dic_device["server"]["port"] = getPort()
 
+	int_seg_finished = 0
+	list_bitrate = []
 	server_proxy = HTTPServer(("", dic_device["client"]["port"]), HandlerProxy)
 	server_proxy.serve_forever()
