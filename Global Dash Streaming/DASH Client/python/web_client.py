@@ -100,26 +100,39 @@ class HandlerProxy(BaseHTTPRequestHandler):
 		self.end_headers()
 
 	def do_GET(self):
+		global list_bitrate
 
 		if ".m4s" in self.path:
-			socket_control = socket()
-			socket_control.connect((dic_device["control"]["ip"], dic_device["control"]["port"] + int(list_adaptor[0][1][-1])))
+			while True:
+				try:
+					socket_control = socket()
+					socket_control.connect((dic_device["control"]["ip"], dic_device["control"]["port"] + int(list_adaptor[0][1][-1])))
 
-			str_bitrate_origin = PATTERN_BITRATE.search(self.path).group()
-			mac_ue = list_adaptor[0][0].replace("-", "").lower()
-			str_type = self.path.split("/")[3]
-			int_seg = int(self.path.split("dash")[1].split(".")[0])
+					str_bitrate_origin = PATTERN_BITRATE.search(self.path).group()
+					mac_ue = list_adaptor[0][0].replace("-", "").lower()
+					str_type = self.path.split("/")[3]
+					int_seg = int(self.path.split("dash")[1].split(".")[0])
 
-			str_message = "%s/%s/%s/%d\n" % (str_bitrate_origin, mac_ue, str_type, int_seg)
-			socket_control.sendall((str_message).encode())
+					str_message = "%s/%s/%s/%d\n" % (str_bitrate_origin, mac_ue, str_type, int_seg)
+					socket_control.sendall((str_message).encode())
 			
-			list_data = socket_control.recv(CONST_KB).decode().split("/")
-			str_bitrate_adjusted = list_data[0]
-			str_ratio = list_data[1]
-			socket_control.close()
+					list_data = socket_control.recv(CONST_KB).decode().split("/")
+					str_bitrate_adjusted = list_data[0]
+					str_ratio = list_data[1]
+					socket_control.close()
 
-			query = self.path.replace(str_bitrate_origin, str_bitrate_adjusted) + "?x=" + str_ratio
-			print("query:", query)
+					query = self.path.replace(str_bitrate_origin, str_bitrate_adjusted) + "?x=" + str_ratio
+					print("query:", query)
+					
+					# 데이터 손실 체크
+					if (str_bitrate_adjusted[:-1] in list_bitrate) is False:
+						print("bitrate was wrong")
+						raise Exception
+
+					break
+				except Exception as e:
+					print(e)
+					time.sleep(0.1)
 
 			while True:
 				try:
@@ -141,6 +154,7 @@ class HandlerProxy(BaseHTTPRequestHandler):
 						if int_size != 0:
 							sum_data += byte_data
 
+						# 데이터 손실 체크
 						check_byte = len(byte_data)
 						if int_size != 0 and abs(check_byte - int_size) > 33:
 							print("media file was corrupted (%d / %d bytes)" % (check_byte, int_size))
@@ -162,6 +176,13 @@ class HandlerProxy(BaseHTTPRequestHandler):
 			try:
 				self._set_headers(200)
 				byte_data = urlopen(self.path).read()
+				if ".mpd" in self.path:
+
+					list_element = str(byte_data).replace("<", "").split("/>")
+					for element in list_element:
+						if "Representation id" in element:
+							list_bitrate.append(PATTERN_BITRATE.search(element).group()[:-1])
+
 				self.wfile.write(byte_data)
 			except FileNotFoundError:
 				self._set_headers(404)
