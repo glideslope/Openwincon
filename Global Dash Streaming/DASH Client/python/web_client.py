@@ -62,6 +62,9 @@ def getInterface():
 	for name in dic_idx:
 		idx = dic_idx[name]
 		while True:
+			# 연결 안된 인터페이스 발견시
+			if "미디어 상태" in list_lines[idx]:
+				break
 			if "물리적 주소" in list_lines[idx]:
 				mac = list_lines[idx].split(":")[1].strip()
 			if "IPv4 주소" in list_lines[idx]:
@@ -199,6 +202,10 @@ if __name__ == "__main__":
 
 	list_adaptor = getInterface()
 	len_adaptor = len(list_adaptor)
+
+	if len_adaptor == 0:
+		print("무선 LAN 연결을 확인해주세요")
+		sys.exit()
 	if len_adaptor == 1:
 		print("무선 LAN을 하나 더 장착해주세요")
 		sys.exit()
