@@ -13,6 +13,7 @@ logging.basicConfig(level = logging.ERROR)
 PATTERN_BITRATE = re.compile("\d+K|\d+M")
 
 CONST_KB = 1024
+NUM_CONNETION = 5
 
 def readCSV():
 	dic_device = {}
@@ -109,7 +110,8 @@ class HandlerProxy(BaseHTTPRequestHandler):
 			while True:
 				try:
 					socket_control = socket()
-					socket_control.connect((dic_device["control"]["ip"], dic_device["control"]["port"] + int(list_adaptor[0][1][-1])))
+					int_port_off = int(list_adaptor[0][1][-1]) % NUM_CONNECTION
+					socket_control.connect((dic_device["control"]["ip"], dic_device["control"]["port"] + int_port_off))
 
 					str_bitrate_origin = PATTERN_BITRATE.search(self.path).group()
 					mac_ue = list_adaptor[0][0].replace("-", "").lower()
