@@ -145,40 +145,26 @@ class HandlerProxy(BaseHTTPRequestHandler):
 					print(e)
 					time.sleep(0.1)
 
-			while True:
-				try:
-					sum_data = bytes(b"")
-					for i, element in enumerate(list_adaptor):
-						mac_ue = element[0]
-						ip_ue = element[1]
+			sum_data = bytes(b"")
+			for i, element in enumerate(list_adaptor):
+				mac_ue = element[0]
+				ip_ue = element[1]
 
-						socket_interface = socket()
-						socket_interface.bind((ip_ue, 0))
-						socket_interface.connect((dic_device["server"]["ip"], dic_device["server"]["port"] + i))
+				socket_interface = socket()
+				socket_interface.bind((ip_ue, 0))
+				socket_interface.connect((dic_device["server"]["ip"], dic_device["server"]["port"] + i))
 						
-						socket_interface.sendall(query.encode())
+				socket_interface.sendall(query.encode())
         
-						int_size = int(socket_interface.recv(CONST_KB).decode())
-						byte_data = socket_interface.recv(int_size)
-				
-						print("%s: %d bytes" % (mac_ue, int_size))
-						if int_size != 0:
-							sum_data += byte_data
-
-						# 데이터 손실 체크
-						check_byte = len(byte_data)
-						if int_size != 0 and abs(check_byte - int_size) > 33:
-							print("media file was corrupted (%d / %d bytes)" % (check_byte, int_size))
-							socket_interface.sendall(bytes(b"re"))
-							socket_interface.close()
-							raise Exception
-						else:
-							socket_interface.sendall(bytes(b"next"))
-							socket_interface.close()
-					break
-				except Exception as e :
-					print(e)
-					time.sleep(0.1)
+				int_size = int(socket_interface.recv(CONST_KB).decode())
+				if int_size > 0:
+					sum_length = 0
+					while sum_length < int_size:
+						data = socket_interface.recv(CONST_KB)
+						sum_data += data
+						sum_length += len(data)
+											
+				print("%s: %d bytes" % (mac_ue, int_size))
 
 			self._set_headers(200)
 			self.wfile.write(sum_data)	

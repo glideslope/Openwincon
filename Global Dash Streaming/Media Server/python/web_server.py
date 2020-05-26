@@ -72,21 +72,41 @@ def divideChunk(port):
 			type = raw.split("/")[3]
 			query = raw.split("/")[-1]
 			object = "../media/" + type + "/" + query.split("?")[0]
-			file = open(object, "rb")
-			byte_data = file.read()
 
 			# OFFSET 계산하기
 			divide = float(query.split("?")[1].split("=")[1])
-			length = sys.getsizeof(byte_data)
+			length = os.path.getsize(object)
 			offset = int(length * divide)
 
 			if port % 2 == 0:
 				con.sendall(str(offset).encode())
-				con.sendall(byte_data[0: offset])
+				if offset > 0:
+					file = open(object, "rb")
+					sum_length = 0
+					data = "data of file".encode()
+					while data:
+						data = file.read(CONST_KB)
+						sum_length += len(data)
+						if sum_length > offset:
+							if data:
+								con.sendall(data[0:offset % CONST_KB])
+							break
+						else:
+							if data:
+								con.sendall(data)	
+					file.close()	
 				str_log = "To session %d, %s, %d bytes" % (port, object.split("/")[-1], offset)
-			else:
+			else:				
 				con.sendall(str(length - offset).encode())
-				con.sendall(byte_data[offset: length])
+				if offset < length:
+					file = open(object, "rb")
+					file.seek(offset)
+					data = "data of file".encode()
+					while data:
+						data = file.read(CONST_KB)
+						if data:
+							con.sendall(data)	
+					file.close()
 				str_log = "To session %d, %s, %d bytes" % (port, object.split("/")[-1], length - offset)
 					
 			print(str_log)
