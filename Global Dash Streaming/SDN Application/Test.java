@@ -120,7 +120,7 @@ public class Test {
 		
 		for (String ue: array_ue) {
 			if (map_rate.get(ue) <= ARRAY_BITRATE[0]) {
-				array_upper.add(0);
+				array_upper.add(ARRAY_BITRATE.length - 1);
 				continue;
 			}
 			
