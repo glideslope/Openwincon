@@ -1,0 +1,47 @@
+{% extends 'layout.html' %}
+{% block title %}Docker swarm controller{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="message">{{ message }}</h1>
+
+    <form method="POST">
+        <div class="form-group">
+            <label>Service name</label>
+            <input type="text" class="form-control" name="service_name" placeholder="Test service">
+        </div>
+        <div class="form-group">
+            <label>Image name</label>
+            <input type="text" class="form-control" name="image_name" placeholder="ubuntu">
+        </div>
+        <div class="form-group">
+            <label>Service command</label>
+            <input type="text" class="form-control" name="service_cmd" placeholder="Default: tail -f /dev/nul">
+        </div>
+        <div class="form-group">
+            <label>Service mode</label>
+            <input type="text" class="form-control" name="service_mod" placeholder="global or replicated"> </div>
+        <div class="form-group">
+            <label>Number of replicas</label>
+            <input type="text" class="form-control" name="num_replica" placeholder="Will be ignored in global mode">
+        </div>
+        <div class="form-group">
+            <label>Service role</label>
+            <input type="text" class="form-control" name="service_role" placeholder="Worker or manager (All when empty)">
+        </div>
+        <div class="form-group">
+            <label>CPU requirement</label>
+            <input type="text" class="form-control" name="cpu_req" placeholder="Default: 1GHz">
+        </div>
+        <div class="form-group">
+            <label>Memory requirement</label>
+            <input type="text" class="form-control" name="mem_req" placeholder="Default: 1GB">
+        </div>
+        <div class="form-group">
+            <label>Disk requirement</label>
+            <input type="text" class="form-control" name="disk_req" placeholder="Default: 1GB">
+        </div>
+        <button type="submit" class="btn btn-primary">Create service</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,12 @@
+{
+  "Server": {
+    "Proxy": {
+      "IP": "127.0.0.1",
+      "PORT": "80"
+    },
+    "SDN_Application": {
+      "IP": "xxx.xxx.xxx.xxx",
+      "PORT": "7777"
+    }
+  }
+}

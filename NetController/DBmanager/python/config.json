@@ -1,0 +1,11 @@
+{
+  "db_server": {
+    "host":"localhost",
+    "user":"root",
+    "passwd":"mmlab2019",
+    "db":"openwinnet"
+  },
+  "api_server": {
+    "port":8000
+  }
+}
