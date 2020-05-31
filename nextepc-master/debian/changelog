@@ -1,0 +1,17 @@
+nextepc (1.0.1~bionicubuntu1) bionic; urgency=medium
+
+  * Release v1.0.1
+
+ -- NextEPC <support@nextepc.com>  Tue, 21 May 2019 11:36:28 -0700
+
+nextepc (1.0.0~bionic) bionic; urgency=medium
+
+  * Release v1.0.0 
+
+ -- NextEPC <support@nextepc.com>  Fri, 17 May 2019 16:13:54 -0700
+
+nextepc (0.3.10~bionic) bionic; urgency=medium
+
+  * Initial Release
+
+ -- NextEPC <support@nextepc.com>  Mon, 29 Apr 2019 16:08:46 -0700

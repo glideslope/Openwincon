@@ -1,0 +1,37 @@
+<%- include ('partials/apheader.ejs');-%>
+    <div class="table-wrapper">
+        <% if (aps.length > 0) {%>
+            <table class="table table-hovered">
+                <thead class="thead-dark">
+                    <tr>
+			<th scope="col">ID</th>
+                        <th scope="col">AP IP address</th>
+                        <th scope="col">AP Name</th>
+                        <th scope="col">Port</th>
+                        <th scope="col">Shared secret</th>
+			<th scope="col">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% aps.forEach((ap, index) => { %>
+                        <tr>
+                            <th scope="row"><%= ap.id %></th>
+                            <td><%= ap.nasname %></td>
+                            <td><%= ap.shortname %></td>
+                            <td><%= ap.ports %></td>
+			    <td><%= ap.secret %></td>
+                            <td>
+                                <a href="/ap/edit/<%= ap.id %>" rel="noopener" class="btn btn-sm btn-success">Edit</a>
+                                <a href="/ap/delete/<%= ap.id %>" class="btn btn-sm btn-danger">Delete</a>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        <% } else { %>
+            <p class="text-center">No APs found. Go <a href="/ap/add" >here</a> to add APs.</p>
+        <% } %>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,27 @@
+<%- include ('partials/apheader.ejs');-%>
+    <div class="container">
+        <% if (message != '') { %>
+            <p class="text-center text-danger"><%= message %></p>
+        <% } %>
+        <form class="add-ap-form" action="" method="POST" >
+            <div class="form-row">
+                <div class="form-group col-md-4">
+                    <input type="text" name="ipaddress" id="ipaddress" placeholder="AP IP address" required>
+                </div>
+                <div class="form-group col-md-4">
+                    <input type="text" class="form-control" name="apname" id="apname" placeholder="AP Name" required>
+                </div>
+                <div class="form-group col-md-4">
+                    <input type="text" class="form-control" name="ports" id="ports" placeholder="Ports">
+                </div>
+	        <div class="form-group col-md-4">
+                    <input type="text" class="form-control" name="secret" id="secret" placeholder="Secret" required>
+                </div>
+
+            </div>
+            <button type="submit" class="btn btn-primary float-right">Add AP</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>
