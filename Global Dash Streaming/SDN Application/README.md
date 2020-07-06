@@ -13,3 +13,61 @@ csv 폴더
 
 # 실행 환경  
 - 리눅스에서만 실행 가능  
+
+<br>
+
+# pom.xml 만들기   
+
+mvn archetype:generate -Dfilter=org.onosproject: -DarchetypeGroupId=org.onosproject -DarchetypeArtifactId=onos-bundle-archetype -DarchetypeVersion=**Version**  
+<br>
+
+Example)  
+```
+mvn archetype:generate -Dfilter=org.onosproject: -DarchetypeGroupId=org.onosproject -DarchetypeArtifactId=onos-bundle-archetype -DarchetypeVersion=1.13.0
+```
+
+<br>
+
+Define value for property 'groupId': **Group**  
+
+Define value for property 'artifactId': **App**  
+
+**ETC:** `Enter`  
+<br>
+
+Example)
+```
+Define value for property 'groupId': kr.ac.postech 
+Define value for property 'artifactId': app
+<Enter>...
+```
+<br>
+
+# Project 컴파일 하기  
+
+Normal)  
+```
+mvn clean install
+```
+
+No Test Code)  
+```
+mvn clean install -Dmaven.test.skip=true
+```
+<br>
+
+# Application 설치 및 실행하기  
+
+(Application can be installed **with ONOS console**)  
+bundle:install mvn:**Group**/**App**/1.0-SNAPSHOT  
+start **App**  
+<br>
+
+Example)  
+```
+bundle:install mvn:kr.ac.postech/app/1.0-SNAPSHOT
+start app
+```
+×
+Drag and Drop
+The image will be downloaded

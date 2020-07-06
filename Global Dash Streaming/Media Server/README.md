@@ -76,6 +76,16 @@ ffmpeg -i bunny.mp4 -b:v 200K bunny_200K.mp4
 
 <br>
 
+- Keyint 맞추기
+```
+ffmpeg -i <mp4 파일> -b:v <비트레이트> -x264-params nal-hrd=cbr -minrate <비트레이트> -maxrate <비트레이트> -bufsize <비트레이트/2> -vcodec libx264 -x264-params keyint=12:scenecut=0 -acodec copy <해당 비트레이트로 인코딩된 mp4파일>
+
+ex)
+ffmpeg -i bunny_200K.mp4 -b:v 200K -x264-params nal-hrd=cbr -minrate 200K -maxrate 200K -bufsize 100K -vcodec libx264 -x264-params keyint=12:scenecut=0 -acodec copy bunny_200K_key.mp4
+```
+
+<br>
+
 - DASH 세그먼트 만들기
 ```
 MP4Box -dash <재생 시간(ms)> -profile live -out dash.mp4 <특정 비트레이트로 인코딩된 mp4파일> <특정 비트레이트로 인코딩된 mp4파일> ...
